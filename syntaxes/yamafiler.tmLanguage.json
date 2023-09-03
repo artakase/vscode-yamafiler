@@ -1,0 +1,43 @@
+{
+    "scopeName": "source.yamafiler",
+    "patterns": [
+        {
+            "include": "#entryline"
+        },
+        {
+            "include": "#linkline"
+        }
+    ],
+    "repository": {
+        "entryline": {
+            "comment": "Line of filer.",
+            "match": "^[* ] (.{9}) (.{11}) (.+/$)?",
+            "captures": {
+                "1": {
+                    "name": "variable"
+                },
+                "2": {
+                    "name": "string"
+                },
+                "3": {
+                    "name": "keyword"
+                }
+            }
+        },
+        "linkline": {
+            "comment": "Line of symbolic link.",
+            "match": "^[* ]L(.{9}) (.{11}) (.+$)",
+            "captures": {
+                "1": {
+                    "name": "variable"
+                },
+                "2": {
+                    "name": "string"
+                },
+                "3": {
+                    "name": "variable"
+                }
+            }
+        }
+    }
+}

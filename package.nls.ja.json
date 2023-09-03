@@ -1,0 +1,22 @@
+{
+    "yamafiler.openFiler.title": "Yamafiler: ファイラーを開く",
+    "yamafiler.enter.title": "Yamafiler: ディレクトリに入る",
+    "yamafiler.goToParent.title": "Yamafiler: 親ディレクトリに移動",
+    "yamafiler.refresh.title": "Yamafiler: 最新の情報に更新",
+    "yamafiler.openWorkspace.title": "Yamafiler: ワークスペースを開く",
+    "yamafiler.addToWorkspace.title": "Yamafiler: ワークスペースに追加",
+    "yamafiler.newFolder.title": "Yamafiler: 新しいフォルダー",
+    "yamafiler.newFile.title": "Yamafiler: 新しいファイル",
+    "yamafiler.rename.title": "Yamafiler: ファイルの名前を変更する",
+    "yamafiler.duplicate.title": "Yamafiler: ファイルの複製",
+    "yamafiler.symlink.title": "Yamafiler: ファイルのシンボリック作成",
+    "yamafiler.delete.title": "Yamafiler: ファイルの削除",
+    "yamafiler.cut.title": "Yamafiler: ファイルの切り取り",
+    "yamafiler.copy.title": "Yamafiler: ファイルのコピー",
+    "yamafiler.targetForSymlink.title": "Yamafiler: シンボリックリンクのターゲットにする",
+    "yamafiler.paste.title": "Yamafiler: ファイルの貼り付け",
+    "yamafiler.select.title": "Yamafiler: 選択",
+    "yamafiler.deselect.title": "Yamafiler: 選択の解除",
+    "yamafiler.toggleSelection.title": "Yamafiler: 選択のトグル",
+    "yamafiler.toggleSelectionAll.title": "Yamafiler: 全ての選択のトグル"
+}

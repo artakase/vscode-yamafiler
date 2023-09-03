@@ -1,0 +1,22 @@
+{
+    "yamafiler.openFiler.title": "Yamafiler: Open Filer",
+    "yamafiler.enter.title": "Yamafiler: Enter Directory",
+    "yamafiler.goToParent.title": "Yamafiler: Go To Parent Directory",
+    "yamafiler.refresh.title": "Yamafiler: Refresh",
+    "yamafiler.openWorkspace.title": "Yamafiler: Open Workspace",
+    "yamafiler.addToWorkspace.title": "Yamafiler: Add To Workspace",
+    "yamafiler.newFolder.title": "Yamafiler: New Folder",
+    "yamafiler.newFile.title": "Yamafiler: New File",
+    "yamafiler.rename.title": "Yamafiler: Rename Files",
+    "yamafiler.duplicate.title": "Yamafiler: Duplicate Files",
+    "yamafiler.symlink.title": "Yamafiler: Create Symbolic Link of Files",
+    "yamafiler.delete.title": "Yamafiler: Delete Files",
+    "yamafiler.cut.title": "Yamafiler: Cut Files",
+    "yamafiler.copy.title": "Yamafiler: Copy Files",
+    "yamafiler.targetForSymlink.title": "Yamafiler: Set Files For Target Of Symlink",
+    "yamafiler.paste.title": "Yamafiler: Paste Files",
+    "yamafiler.select.title": "Yamafiler: Select",
+    "yamafiler.deselect.title": "Yamafiler: Deselect",
+    "yamafiler.toggleSelection.title": "Yamafiler: Toggle Selection",
+    "yamafiler.toggleSelectionAll.title": "Yamafiler: Toggle All Selection"
+}

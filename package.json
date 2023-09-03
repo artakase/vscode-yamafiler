@@ -1,0 +1,184 @@
+{
+    "name": "yamafiler",
+    "displayName": "Yamafiler",
+    "description": "VS Code 用のファイルマネージャー",
+    "version": "0.0.1",
+    "publisher": "artakase",
+    "author": {
+        "name": "TAKASE Arihiro"
+    },
+    "icon": "./icon.png",
+    "license": "MIT",
+    "homepage": "https://github.com/artakase/vscode-yamafiler",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/artakase/vscode-yamafiler"
+    },
+    "bugs": {
+        "url": "https://github.com/artakase/vscode-yamafiler/issues"
+    },
+    "engines": {
+        "vscode": "^1.81.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "keywords": [
+        "filer"
+    ],
+    "activationEvents": [],
+    "main": "./out/extension.js",
+    "l10n": "./l10n",
+    "contributes": {
+        "commands": [
+            {
+                "command": "yamafiler.openFiler",
+                "title": "%yamafiler.openFiler.title%"
+            },
+            {
+                "command": "yamafiler.enter",
+                "title": "%yamafiler.enter.title%",
+                "enablement": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.goToParent",
+                "title": "%yamafiler.goToParent.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.refresh",
+                "title": "%yamafiler.refresh.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.openWorkspace",
+                "title": "%yamafiler.openWorkspace.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.addToWorkspace",
+                "title": "%yamafiler.addToWorkspace.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.newFolder",
+                "title": "%yamafiler.newFolder.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.newFile",
+                "title": "%yamafiler.newFile.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.newMultipleFiles",
+                "title": "%yamafiler.newMultipleFiles.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.rename",
+                "title": "%yamafiler.rename.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.duplicate",
+                "title": "%yamafiler.duplicate.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.symlink",
+                "title": "%yamafiler.symlink.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.delete",
+                "title": "%yamafiler.delete.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.cut",
+                "title": "%yamafiler.cut.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.copy",
+                "title": "%yamafiler.copy.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.targetForSymlink",
+                "title": "%yamafiler.targetForSymlink.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.paste",
+                "title": "%yamafiler.paste.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.select",
+                "title": "%yamafiler.select.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.deselect",
+                "title": "%yamafiler.deselect.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.toggleSelection",
+                "title": "%yamafiler.toggleSelection.title%",
+                "when": "resourceScheme == yamafiler"
+            },
+            {
+                "command": "yamafiler.toggleSelectionAll",
+                "title": "%yamafiler.toggleSelectionAll.title%",
+                "when": "resourceScheme == yamafiler"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "yamafiler",
+                "scopeName": "source.yamafiler",
+                "path": "./syntaxes/yamafiler.tmLanguage.json"
+            }
+        ],
+        "languages": [
+            {
+                "id": "yamafiler",
+                "extensions": [
+                    ".yamafiler"
+                ],
+                "icon": {
+                    "light": "./icon.png",
+                    "dark": "./icon.png"
+                }
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "eslint src --ext ts",
+        "test": "node ./out/test/runTest.js"
+    },
+    "dependencies": {
+        "filesize": "^10.0.12",
+        "minimatch": "^9.0.3"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.81.0",
+        "@types/mocha": "^10.0.1",
+        "@types/node": "^20.5.9",
+        "@typescript-eslint/eslint-plugin": "^6.5.0",
+        "@typescript-eslint/parser": "^6.5.0",
+        "eslint": "^8.48.0",
+        "glob": "^10.3.4",
+        "mocha": "^10.2.0",
+        "typescript": "^5.2.2",
+        "@vscode/test-electron": "^2.3.4"
+    },
+    "preview": true
+}
