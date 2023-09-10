@@ -58,7 +58,7 @@ Yamafiler は VS Code 用のファイルマネージャーです。
 
 Yamafiler はデフォルトのキーバインドを定義しません。
 
-keybinding.json に設定する例を以下に示します。
+keybindings.json に設定する例を以下に示します。
 
 ```json
 [
