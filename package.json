@@ -1,8 +1,8 @@
 {
     "name": "yamafiler",
     "displayName": "Yamafiler",
-    "description": "VS Code 用のファイルマネージャー",
-    "version": "0.0.1",
+    "description": "File manager for VS Code",
+    "version": "0.0.2",
     "publisher": "artakase",
     "author": {
         "name": "TAKASE Arihiro"

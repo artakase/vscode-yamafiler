@@ -1,66 +1,64 @@
 # Yamafiler
 
-Yamafiler is a file manager for VS Code.
+Yamafiler は VS Code 用のファイルマネージャーです。
 
-[Japanese README](docs/README_ja.md)
+## コマンド
 
-## Commands
+選択されている行とは、\*マークが付いた行があればその行、無ければカーソル範囲の行のことを表します。
 
-"Selected lines" are the lines marked with \* or the lines within the cursor range.
+### 開く
 
-### Open
+-   `yamafiler.openFiler` - Yamafiler を開きます。
 
--   `yamafiler.openFiler` - Opens a filer.
+    -   _path_ - フォルダーのパスです。'~' にするとホームフォルダーを開きます。
+    -   _column_ = 'active' - ファイラーを開くカラムです。'active' または 'beside' です。
+    -   _ask_ = 'never' - ファイラーで表示するフォルダーを尋ねるかどうかを選択します。デフォルトでは現在のファイルの親フォルダーを表示します。'dialog' にするとフォルダー選択ダイアログを表示します。
 
-    -   _path_ - Path to a folder. '~' opens the home folder.
-    -   _column_ = 'active' - Column in which the filer should be shown. 'active' or 'beside'.
-    -   _ask_ = 'never' - How to ask a folder to show in the filer. By default it shows the parent folder of the current file. 'dialog' shows a folder selection dialog.
+-   `yamafiler.enter` - カーソル行の子フォルダーまたはファイルを開きます。
 
--   `yamafiler.enter` - Opens the child folder or file under cursor.
+    -   _column_ = 'active' - ファイルを開くカラムです。'active' または 'beside' です。
+    -   _preserveFocus_ = false - ファイルを開くとき、ファイラーにフォーカスしたままにするかを指定します。
+    -   _preview_ = false - ファイルをプレビューで開くかを指定します。
+    -   _binaryPattern_ = '' - バイナリとして開くファイルの名前のパターンです。
+    -   _externalPattern_ = '' - 外部アプリケーションで開くファイルの名前のパターンです。
+    -   _externalFolderPattern_ = '' - 外部アプリケーションで開くフォルダーの名前のパターンです。
 
-    -   _column_ = 'active' - Column in which the file should be shown. 'active' or 'beside'.
-    -   _preserveFocus_ = false - If true, the file will not take focus.
-    -   _preview_ = false - If true, the tab will show as preview.
-    -   _binaryPattern_ = '' - Pattern for file names to open as binary.
-    -   _externalPattern_ = '' - Pattern for file names to open in an external application.
-    -   _externalFolderPattern_ = '' - Pattern for folder names to open in an external application.
+-   `yamafiler.goToParent` - 現在表示しているフォルダーの親フォルダーを開きます。
+-   `yamafiler.refresh` - フォルダーの内容を更新します。
+    -   _resetSelection_ = false - 選択を破棄するかを指定します。
+-   `yamafiler.openWorkspace` - カーソル上のワークスペースを開きます。ワークスペースはワークスペース設定ファイルまたはフォルダーです。
+    -   _forceNewWindow_ = false - ワークスペースを新しいウィンドウで開くかを選択します。
+-   `yamafiler.addToWorkspace` - 選択されているフォルダーをワークスペースに追加します。
 
--   `yamafiler.goToParent` - Opens the parent folder of the current folder.
--   `yamafiler.refresh` - Updates the contents of the folder.
-    -   _resetSelection_ = false - If true, discard the selection.
--   `yamafiler.openWorkspace` - Opens the workspace under cursor. A workspace is a `.code-workspace` file or a folder.
-    -   _forceNewWindow_ = false - If true, the workspace will be opened in a new window.
--   `yamafiler.addToWorkspace` - Adds the selected folders to the workspace.
+### ファイル操作
 
-### File operations
+-   `yamafiler.newFolder` - 名前を入力して新しいフォルダーを作成します。
+-   `yamafiler.newFile` - 名前を入力して新しいファイルを作成します。
+-   `yamafiler.newMultipleFiles` - バッチを使用して新しいフォルダーとファイルを作成します。
+-   `yamafiler.rename` - 選択されているフォルダーまたはファイルの名前を変更します。複数選択時はバッチを使用します。
+-   `yamafiler.duplicate` - 選択されているフォルダーまたはファイルを入力した名前で現在のフォルダーに複製します。複数選択時はバッチを使用します。
+-   `yamafiler.symlink` - 選択されているフォルダーまたはファイルへのシンボリックリンクを作成します。複数選択時はバッチを使用します。
+-   `yamafiler.delete` - 選択されているフォルダーまたはファイルを削除します。
 
--   `yamafiler.newFolder` - Creates a new folder by entering a name.
--   `yamafiler.newFile` - Creates a new file by entering a name.
--   `yamafiler.newMultipleFiles` - Create new folders and files by batch file.
--   `yamafiler.rename` - Renames the selected folders and files. Batch file is used for multiple selection.
--   `yamafiler.duplicate` - Copies the selected folders and files to the current folder with the name you enter. Batch file is used for multiple selection.
--   `yamafiler.symlink` - Creates symbolic links to the selected folders and files. Batch file is used for multiple selection.
--   `yamafiler.delete` - Deletes the selected folders and files.
+### クリップボードを使用したファイル操作
 
-### File operations with clipboard
+-   `yamafiler.cut` - 選択されているフォルダーまたはファイルをカットします。
+-   `yamafiler.copy` - 選択されているフォルダーまたはファイルのコピーを作成します。
+-   `yamafiler.targetForSymlink` - 選択されているフォルダーまたはファイルをシンボリックリンクのターゲットとして指定します。
+-   `yamafiler.paste` - クリップボードのファイルをファイラーのフォルダーに貼り付けます。クリップボードに書き込んだフォルダーを開いているときには実行できません。
 
--   `yamafiler.cut` - Cuts the selected folders and files.
--   `yamafiler.copy` - Copies the selected folders and files.
--   `yamafiler.targetForSymlink` - Specifies the selected folders and files as the targets of symbolic links.
--   `yamafiler.paste` - Pastes the folders and files from the clipboard into the current folder. It cannot be executed in the source of the clipboard.
+### ファイル選択
 
-### File selection
+-   `yamafiler.select` - カーソル行を選択し、\* マークを付けます。
+-   `yamafiler.deselect` - カーソル行の選択を解除します。
+-   `yamafiler.toggleSelection` - カーソル行の選択をトグルします。
+-   `yamafiler.toggleSelectionAll` - 全ての行の選択をトグルします。
 
--   `yamafiler.select` - Selects the cursor line and mark it with \*.
--   `yamafiler.deselect` - Deselects the cursor line.
--   `yamafiler.toggleSelection` - Toggles selection of the cursor line.
--   `yamafiler.toggleSelectionAll` - Toggles selection of all lines.
+## 設定例
 
-## Setting examples
+Yamafiler はデフォルトのキーバインドを定義しません。
 
-Yamafiler does not define default keybindings.
-
-An example of setting in keybindings.json is shown below.
+keybindings.json に設定する例を以下に示します。
 
 ```json
 [
@@ -69,7 +67,7 @@ An example of setting in keybindings.json is shown below.
         "command": "yamafiler.openFiler",
         "when": "editorTextFocus && !inDebugRepl"
     },
-    // An example for using VSCode Neovim together.
+    // VSCode Neovim を併用している場合の例
     // {
     //     "key": ",",
     //     "command": "yamafiler.openFiler",
@@ -87,7 +85,7 @@ An example of setting in keybindings.json is shown below.
         "args": { "path": "~" },
         "when": "resourceScheme == yamafiler && editorTextFocus"
     },
-    // It is also recommended to add pdf if you use an extension for preview.
+    // プレビュー用の拡張を併用している場合は pdf を加えるのもおすすめです。
     {
         "key": "l",
         "command": "yamafiler.enter",
@@ -236,12 +234,12 @@ An example of setting in keybindings.json is shown below.
 ]
 ```
 
-## License
+## ライセンス
 
-Licensed under the [MIT](LICENSE.txt) license.
+[MIT](../LICENSE) license のもとに公開します。
 
-## Thanks
+## 感謝
 
--   [Shougo/defx.nvim](https://github.com/Shougo/defx.nvim) - Source of idea
--   [shirou/vscode-dired](https://github.com/shirou/vscode-dired) - Pioneer
--   [JannisX11/batch-rename](https://github.com/JannisX11/batch-rename) - Batch function
+-   [Shougo/defx.nvim](https://github.com/Shougo/defx.nvim) - アイデアの源
+-   [shirou/vscode-dired](https://github.com/shirou/vscode-dired) - 先駆者
+-   [JannisX11/batch-rename](https://github.com/JannisX11/batch-rename) - バッチ機能
