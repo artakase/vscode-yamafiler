@@ -2,12 +2,12 @@
     "name": "yamafiler",
     "displayName": "Yamafiler",
     "description": "File manager for VS Code",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "publisher": "artakase",
     "author": {
         "name": "TAKASE Arihiro"
     },
-    "icon": "./icon.png",
+    "icon": "images/icon.png",
     "license": "MIT",
     "homepage": "https://github.com/artakase/vscode-yamafiler",
     "repository": {
@@ -18,7 +18,7 @@
         "url": "https://github.com/artakase/vscode-yamafiler/issues"
     },
     "engines": {
-        "vscode": "^1.81.0"
+        "vscode": "^1.82.0"
     },
     "categories": [
         "Other"
@@ -150,8 +150,8 @@
                     ".yamafiler"
                 ],
                 "icon": {
-                    "light": "./icon.png",
-                    "dark": "./icon.png"
+                    "light": "images/icon.png",
+                    "dark": "images/icon.png"
                 }
             }
         ]
@@ -169,12 +169,12 @@
         "minimatch": "^9.0.3"
     },
     "devDependencies": {
-        "@types/vscode": "^1.81.0",
+        "@types/vscode": "^1.82.0",
         "@types/mocha": "^10.0.1",
-        "@types/node": "^20.5.9",
-        "@typescript-eslint/eslint-plugin": "^6.5.0",
-        "@typescript-eslint/parser": "^6.5.0",
-        "eslint": "^8.48.0",
+        "@types/node": "^20.6.1",
+        "@typescript-eslint/eslint-plugin": "^6.7.0",
+        "@typescript-eslint/parser": "^6.7.0",
+        "eslint": "^8.49.0",
         "glob": "^10.3.4",
         "mocha": "^10.2.0",
         "typescript": "^5.2.2",

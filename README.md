@@ -2,6 +2,8 @@
 
 Yamafiler is a file manager for VS Code.
 
+![demo](images/demo.gif)
+
 [Japanese README](docs/README_ja.md)
 
 ## Commands
