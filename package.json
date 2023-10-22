@@ -2,7 +2,7 @@
     "name": "yamafiler",
     "displayName": "Yamafiler",
     "description": "File manager for VS Code",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "publisher": "artakase",
     "author": {
         "name": "TAKASE Arihiro"
@@ -18,7 +18,7 @@
         "url": "https://github.com/artakase/vscode-yamafiler/issues"
     },
     "engines": {
-        "vscode": "^1.82.0"
+        "vscode": "^1.83.1"
     },
     "categories": [
         "Other"
@@ -165,20 +165,20 @@
         "test": "node ./out/test/runTest.js"
     },
     "dependencies": {
-        "filesize": "^10.0.12",
+        "filesize": "^10.1.0",
         "minimatch": "^9.0.3"
     },
     "devDependencies": {
-        "@types/vscode": "^1.82.0",
-        "@types/mocha": "^10.0.1",
-        "@types/node": "^20.6.1",
-        "@typescript-eslint/eslint-plugin": "^6.7.0",
-        "@typescript-eslint/parser": "^6.7.0",
-        "eslint": "^8.49.0",
-        "glob": "^10.3.4",
+        "@types/vscode": "^1.83.1",
+        "@types/mocha": "^10.0.3",
+        "@types/node": "^20.8.7",
+        "@typescript-eslint/eslint-plugin": "^6.8.0",
+        "@typescript-eslint/parser": "^6.8.0",
+        "eslint": "^8.52.0",
+        "glob": "^10.3.10",
         "mocha": "^10.2.0",
         "typescript": "^5.2.2",
-        "@vscode/test-electron": "^2.3.4"
+        "@vscode/test-electron": "^2.3.5"
     },
     "preview": true
 }

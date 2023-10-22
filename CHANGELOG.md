@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.0.4]
+
+-   Use new icon
+-   Adjust the positions
+
 ## [0.0.3]
 
 -   Add screenshot

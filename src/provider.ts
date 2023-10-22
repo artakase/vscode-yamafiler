@@ -21,8 +21,7 @@ function makeLine(file: FileItem, isSelected: boolean): string {
     const markSymbolicLink = file.isSymbolicLink ? 'L' : ' ';
     const sizeStr = file.isDirectory
         ? ''
-        : // : (filesize(file.stats.size, { base: 2, standard: 'jedec', round: 1, symbols: { B: ' B' } }) as string);
-          filesize(file.stats.size, { base: 2, standard: 'jedec', round: 1 });
+        : filesize(file.stats.size, { base: 2, standard: 'jedec', round: 1, symbols: { B: ' B' } });
 
     return `${markSelected}${markSymbolicLink}${sizeStr.padStart(9)} ${timeStr} ${fileName}${markDirectory}`;
 }
