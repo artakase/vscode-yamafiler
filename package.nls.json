@@ -7,6 +7,7 @@
     "yamafiler.addToWorkspace.title": "Yamafiler: Add To Workspace",
     "yamafiler.newFolder.title": "Yamafiler: New Folder",
     "yamafiler.newFile.title": "Yamafiler: New File",
+    "yamafiler.newMultipleFiles.title": "Yamafiler: New Multiple Files",
     "yamafiler.rename.title": "Yamafiler: Rename Files",
     "yamafiler.duplicate.title": "Yamafiler: Duplicate Files",
     "yamafiler.symlink.title": "Yamafiler: Create Symbolic Link of Files",
