@@ -4,6 +4,43 @@ Yamafiler は VS Code 用のファイルマネージャーです。
 
 ![demo](../images/demo.gif)
 
+## 設定
+
+-   `yamafiler.useRecommendedKeybindings` - 以下に示す推奨のキーバインドを使用します。
+
+| キー                                                 | 操作                                                        |
+| ---------------------------------------------------- | ----------------------------------------------------------- |
+| `Ctrl` `Shift` `Y`                                   | 起動                                                        |
+| `Shift` `` ` `` <br>日本語キーボードでは `Shift` `'` | ホームフォルダーを開く                                      |
+| `O`                                                  | 同じフォルダーを隣のカラムにも開く                          |
+| `H`                                                  | 親フォルダーを開く                                          |
+| `J`                                                  | カーソルを下に移動                                          |
+| `K`                                                  | カーソルを上に移動                                          |
+| `L`                                                  | 子フォルダー/ファイルを開く                                 |
+| `E`/`Enter`                                          | 子フォルダー/ファイルを開く（ファイルはテキストとして開く） |
+| `Shift` `P`                                          | ファイルを隣のカラムで開く                                  |
+| `Z`                                                  | フォルダーの内容を更新                                      |
+| `Q`                                                  | ファイラーを閉じる                                          |
+| `W`                                                  | ワークスペースを開く                                        |
+| `Shift` `W`                                          | ワークスペースを新しいウィンドウで開く                      |
+| `Space`                                              | 選択/選択解除                                               |
+| `Shift` `8`                                          | 全ての行を選択/選択解除                                     |
+| `Shift` `K`                                          | 新しいフォルダー                                            |
+| `Shift` `N`                                          | 新しいファイル                                              |
+| `Shift` `M`                                          | 新しい複数のフォルダーとファイル                            |
+| `R`                                                  | リネーム                                                    |
+| `C`                                                  | 同じフォルダーに複製                                        |
+| `Shift` `S`                                          | 同じフォルダーにシンボリックリンクを作成（Linux, MacOS）    |
+| `D`                                                  | 削除                                                        |
+| `M`                                                  | 移動                                                        |
+| `Y`                                                  | コピー                                                      |
+| `Shift` `T`                                          | シンボリックリンクのターゲットに指定（Linux, MacOS）        |
+| `P`                                                  | ペースト                                                    |
+
+キーが他の拡張機能と衝突する場合は手動で調整してください。
+`.pdf` ファイルをプレビューするには、`vscode-pdf` などの拡張機能が別途必要です。
+同等の keybindings.json は [こちら](keybindings.json) を参照してください。
+
 ## コマンド
 
 選択されている行とは、\*マークが付いた行があればその行、無ければカーソル範囲の行のことを表します。
@@ -39,14 +76,14 @@ Yamafiler は VS Code 用のファイルマネージャーです。
 -   `yamafiler.newMultipleFiles` - バッチを使用して新しいフォルダーとファイルを作成します。
 -   `yamafiler.rename` - 選択されているフォルダーまたはファイルの名前を変更します。複数選択時はバッチを使用します。
 -   `yamafiler.duplicate` - 選択されているフォルダーまたはファイルを入力した名前で現在のフォルダーに複製します。複数選択時はバッチを使用します。
--   `yamafiler.symlink` - 選択されているフォルダーまたはファイルへのシンボリックリンクを作成します。複数選択時はバッチを使用します。
+-   `yamafiler.symlink` - 選択されているフォルダーまたはファイルへのシンボリックリンクを作成します。複数選択時はバッチを使用します（Linux, MacOS）。
 -   `yamafiler.delete` - 選択されているフォルダーまたはファイルを削除します。
 
 ### クリップボードを使用したファイル操作
 
 -   `yamafiler.cut` - 選択されているフォルダーまたはファイルをカットします。
 -   `yamafiler.copy` - 選択されているフォルダーまたはファイルのコピーを作成します。
--   `yamafiler.targetForSymlink` - 選択されているフォルダーまたはファイルをシンボリックリンクのターゲットとして指定します。
+-   `yamafiler.targetForSymlink` - 選択されているフォルダーまたはファイルをシンボリックリンクのターゲットとして指定します（Linux, MacOS）。
 -   `yamafiler.paste` - クリップボードのファイルをファイラーのフォルダーに貼り付けます。クリップボードに書き込んだフォルダーを開いているときには実行できません。
 
 ### ファイル選択
@@ -55,186 +92,6 @@ Yamafiler は VS Code 用のファイルマネージャーです。
 -   `yamafiler.deselect` - カーソル行の選択を解除します。
 -   `yamafiler.toggleSelection` - カーソル行の選択をトグルします。
 -   `yamafiler.toggleSelectionAll` - 全ての行の選択をトグルします。
-
-## 設定例
-
-Yamafiler はデフォルトのキーバインドを定義しません。
-
-keybindings.json に設定する例を以下に示します。
-
-```json
-[
-    {
-        "key": "ctrl+y",
-        "command": "yamafiler.openFiler",
-        "when": "editorTextFocus && !inDebugRepl"
-    },
-    // VSCode Neovim を併用している場合の例
-    // {
-    //     "key": ",",
-    //     "command": "yamafiler.openFiler",
-    //     "when": "!inputFocus || editorTextFocus && !inDebugRepl && neovim.mode == 'normal' && neovim.init"
-    // },
-    {
-        "key": "o",
-        "command": "yamafiler.openFiler",
-        "args": { "column": "beside" },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+`",
-        "command": "yamafiler.openFiler",
-        "args": { "path": "~" },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    // プレビュー用の拡張を併用している場合は pdf を加えるのもおすすめです。
-    {
-        "key": "l",
-        "command": "yamafiler.enter",
-        "args": {
-            "binaryPattern": "*.{jpg,jpe,jpeg,png,bmp,gif,ico,webp,avif,mp3,wav,ogg,oga,mp4,webm}",
-            "preview": true
-        },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "e",
-        "command": "yamafiler.enter",
-        "args": { "preview": true },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "enter",
-        "command": "yamafiler.enter",
-        "args": { "preview": true },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+p",
-        "command": "yamafiler.enter",
-        "args": {
-            "preview": true,
-            "binaryPattern": "*.{jpg,jpe,jpeg,png,bmp,gif,ico,webp,avif,mp3,wav,ogg,oga,mp4,webm}",
-            "column": "beside",
-            "preserveFocus": true
-        },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "h",
-        "command": "yamafiler.goToParent",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "z",
-        "command": "yamafiler.refresh",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "x",
-        "command": "yamafiler.enter",
-        "args": {
-            "preview": true,
-            "binaryPattern": "*.{jpg,jpe,jpeg,png,bmp,gif,ico,webp,avif,mp3,wav,ogg,oga,mp4,webm}",
-            "externalPattern": "*.{html,docx}"
-        },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "q",
-        "command": "workbench.action.closeActiveEditor",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "space",
-        "command": "yamafiler.toggleSelection",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+8",
-        "command": "yamafiler.toggleSelectionAll",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "w",
-        "command": "yamafiler.openWorkspace",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+w",
-        "command": "yamafiler.openWorkspace",
-        "args": { "forceNewWindow": true },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+k",
-        "command": "yamafiler.newFolder",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+n",
-        "command": "yamafiler.newFile",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+m",
-        "command": "yamafiler.newMultipleFiles",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "r",
-        "command": "yamafiler.rename",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "c",
-        "command": "yamafiler.duplicate",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+s",
-        "command": "yamafiler.symlink",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "d",
-        "command": "yamafiler.delete",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "m",
-        "command": "yamafiler.cut",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "y",
-        "command": "yamafiler.copy",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+t",
-        "command": "yamafiler.targetForSymlink",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "p",
-        "command": "yamafiler.paste",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "k",
-        "command": "cursorMove",
-        "args": { "to": "up", "by": "line" },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "j",
-        "command": "cursorMove",
-        "args": { "to": "down", "by": "line" },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    }
-]
-```
 
 ## ライセンス
 

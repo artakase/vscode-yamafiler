@@ -19,5 +19,6 @@
     "yamafiler.select.title": "Yamafiler: 選択",
     "yamafiler.deselect.title": "Yamafiler: 選択の解除",
     "yamafiler.toggleSelection.title": "Yamafiler: 選択のトグル",
-    "yamafiler.toggleSelectionAll.title": "Yamafiler: 全ての選択のトグル"
+    "yamafiler.toggleSelectionAll.title": "Yamafiler: 全ての選択のトグル",
+    "config.yamafiler.useRecommendedKeybindings": "推奨のキーバインドを使用する"
 }

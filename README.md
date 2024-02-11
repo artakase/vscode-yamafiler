@@ -6,6 +6,43 @@ Yamafiler is a file manager for VS Code.
 
 [Japanese README](docs/README_ja.md)
 
+## Configuration
+
+-   `yamafiler.useRecommendedKeybindings` - Use recommended keybindings shown below.
+
+| Key                | Operation                                        |
+| ------------------ | ------------------------------------------------ |
+| `Ctrl` `Shift` `Y` | Open filer                                       |
+| `Shift` `` ` ``    | Open home folder                                 |
+| `O`                | Open the same folder to the side                 |
+| `H`                | Open parent folder                               |
+| `J`                | Move cursor down                                 |
+| `K`                | Move cursor up                                   |
+| `L`                | Open child folder/file                           |
+| `E`/`Enter`        | Open child folder/file (open file as text)       |
+| `Shift` `P`        | Open file to the side                            |
+| `Z`                | Refresh                                          |
+| `Q`                | Close filer                                      |
+| `W`                | Open workspace                                   |
+| `Shift` `W`        | Open workspace in a new window                   |
+| `Space`            | Select/Deselect                                  |
+| `Shift` `8`        | Select/Deselect all lines                        |
+| `Shift` `K`        | New folder                                       |
+| `Shift` `N`        | New file                                         |
+| `Shift` `M`        | New multiple folders and files                   |
+| `R`                | Rename                                           |
+| `C`                | Duplicate in the same folder                     |
+| `Shift` `S`        | Create symlink in the same folder (Linux, macOS) |
+| `D`                | Delete                                           |
+| `M`                | Move                                             |
+| `Y`                | Copy                                             |
+| `Shift` `T`        | Target of symlink (Linux, macOS)                 |
+| `P`                | Paste                                            |
+
+If the keys conflict with those of other extensions, please adjust them manually.
+Another extension such as `vscode-pdf` is needed to preview `.pdf` files.
+An equivalent keybindings.json file is available [here](docs/keybindings.json).
+
 ## Commands
 
 "Selected lines" are the lines marked with \* or the lines within the cursor range.
@@ -41,14 +78,14 @@ Yamafiler is a file manager for VS Code.
 -   `yamafiler.newMultipleFiles` - Create new folders and files by batch file.
 -   `yamafiler.rename` - Renames the selected folders and files. Batch file is used for multiple selection.
 -   `yamafiler.duplicate` - Copies the selected folders and files to the current folder with the name you enter. Batch file is used for multiple selection.
--   `yamafiler.symlink` - Creates symbolic links to the selected folders and files. Batch file is used for multiple selection.
+-   `yamafiler.symlink` - Creates symbolic links to the selected folders and files. Batch file is used for multiple selection (Linux, macOS).
 -   `yamafiler.delete` - Deletes the selected folders and files.
 
 ### File operations with clipboard
 
 -   `yamafiler.cut` - Cuts the selected folders and files.
 -   `yamafiler.copy` - Copies the selected folders and files.
--   `yamafiler.targetForSymlink` - Specifies the selected folders and files as the targets of symbolic links.
+-   `yamafiler.targetForSymlink` - Specifies the selected folders and files as the targets of symbolic links (Linux, macOS).
 -   `yamafiler.paste` - Pastes the folders and files from the clipboard into the current folder. It cannot be executed in the source of the clipboard.
 
 ### File selection
@@ -58,189 +95,9 @@ Yamafiler is a file manager for VS Code.
 -   `yamafiler.toggleSelection` - Toggles selection of the cursor line.
 -   `yamafiler.toggleSelectionAll` - Toggles selection of all lines.
 
-## Setting examples
-
-Yamafiler does not define default keybindings.
-
-An example of setting in keybindings.json is shown below.
-
-```json
-[
-    {
-        "key": "ctrl+y",
-        "command": "yamafiler.openFiler",
-        "when": "editorTextFocus && !inDebugRepl"
-    },
-    // An example for using VSCode Neovim together.
-    // {
-    //     "key": ",",
-    //     "command": "yamafiler.openFiler",
-    //     "when": "!inputFocus || editorTextFocus && !inDebugRepl && neovim.mode == 'normal' && neovim.init"
-    // },
-    {
-        "key": "o",
-        "command": "yamafiler.openFiler",
-        "args": { "column": "beside" },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+`",
-        "command": "yamafiler.openFiler",
-        "args": { "path": "~" },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    // It is also recommended to add pdf if you use an extension for preview.
-    {
-        "key": "l",
-        "command": "yamafiler.enter",
-        "args": {
-            "binaryPattern": "*.{jpg,jpe,jpeg,png,bmp,gif,ico,webp,avif,mp3,wav,ogg,oga,mp4,webm}",
-            "preview": true
-        },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "e",
-        "command": "yamafiler.enter",
-        "args": { "preview": true },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "enter",
-        "command": "yamafiler.enter",
-        "args": { "preview": true },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+p",
-        "command": "yamafiler.enter",
-        "args": {
-            "preview": true,
-            "binaryPattern": "*.{jpg,jpe,jpeg,png,bmp,gif,ico,webp,avif,mp3,wav,ogg,oga,mp4,webm}",
-            "column": "beside",
-            "preserveFocus": true
-        },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "h",
-        "command": "yamafiler.goToParent",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "z",
-        "command": "yamafiler.refresh",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "x",
-        "command": "yamafiler.enter",
-        "args": {
-            "preview": true,
-            "binaryPattern": "*.{jpg,jpe,jpeg,png,bmp,gif,ico,webp,avif,mp3,wav,ogg,oga,mp4,webm}",
-            "externalPattern": "*.{html,docx}"
-        },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "q",
-        "command": "workbench.action.closeActiveEditor",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "space",
-        "command": "yamafiler.toggleSelection",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+8",
-        "command": "yamafiler.toggleSelectionAll",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "w",
-        "command": "yamafiler.openWorkspace",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+w",
-        "command": "yamafiler.openWorkspace",
-        "args": { "forceNewWindow": true },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+k",
-        "command": "yamafiler.newFolder",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+n",
-        "command": "yamafiler.newFile",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+m",
-        "command": "yamafiler.newMultipleFiles",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "r",
-        "command": "yamafiler.rename",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "c",
-        "command": "yamafiler.duplicate",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+s",
-        "command": "yamafiler.symlink",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "d",
-        "command": "yamafiler.delete",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "m",
-        "command": "yamafiler.cut",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "y",
-        "command": "yamafiler.copy",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "shift+t",
-        "command": "yamafiler.targetForSymlink",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "p",
-        "command": "yamafiler.paste",
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "k",
-        "command": "cursorMove",
-        "args": { "to": "up", "by": "line" },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    },
-    {
-        "key": "j",
-        "command": "cursorMove",
-        "args": { "to": "down", "by": "line" },
-        "when": "resourceScheme == yamafiler && editorTextFocus"
-    }
-]
-```
-
 ## License
 
-Licensed under the [MIT](LICENSE.txt) license.
+Licensed under the [MIT](LICENSE) license.
 
 ## Thanks
 

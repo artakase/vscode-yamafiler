@@ -16,6 +16,7 @@
     "Copy name": "コピー名",
     "Link name": "リンク名",
     "Delete this file?": "このファイルを削除しますか？",
+    "Delete": "削除",
     "{0} has been removed.": "{0} を削除しました。",
     "{0} has been cut.": "{0} が切り取られました。",
     "{0} has been copied.": "{0} がコピーされました。",

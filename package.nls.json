@@ -19,5 +19,6 @@
     "yamafiler.select.title": "Yamafiler: Select",
     "yamafiler.deselect.title": "Yamafiler: Deselect",
     "yamafiler.toggleSelection.title": "Yamafiler: Toggle Selection",
-    "yamafiler.toggleSelectionAll.title": "Yamafiler: Toggle All Selection"
+    "yamafiler.toggleSelectionAll.title": "Yamafiler: Toggle All Selection",
+    "config.yamafiler.useRecommendedKeybindings": "Use recommended keybindings"
 }

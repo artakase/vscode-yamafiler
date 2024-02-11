@@ -43,104 +43,284 @@
             {
                 "command": "yamafiler.goToParent",
                 "title": "%yamafiler.goToParent.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.refresh",
                 "title": "%yamafiler.refresh.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.openWorkspace",
                 "title": "%yamafiler.openWorkspace.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.addToWorkspace",
                 "title": "%yamafiler.addToWorkspace.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.newFolder",
                 "title": "%yamafiler.newFolder.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.newFile",
                 "title": "%yamafiler.newFile.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.newMultipleFiles",
                 "title": "%yamafiler.newMultipleFiles.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.rename",
                 "title": "%yamafiler.rename.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.duplicate",
                 "title": "%yamafiler.duplicate.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.symlink",
                 "title": "%yamafiler.symlink.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.delete",
                 "title": "%yamafiler.delete.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.cut",
                 "title": "%yamafiler.cut.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.copy",
                 "title": "%yamafiler.copy.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.targetForSymlink",
                 "title": "%yamafiler.targetForSymlink.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.paste",
                 "title": "%yamafiler.paste.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.select",
                 "title": "%yamafiler.select.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.deselect",
                 "title": "%yamafiler.deselect.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.toggleSelection",
                 "title": "%yamafiler.toggleSelection.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             },
             {
                 "command": "yamafiler.toggleSelectionAll",
                 "title": "%yamafiler.toggleSelectionAll.title%",
-                "when": "resourceScheme == yamafiler"
+                "enablement": "resourceScheme == yamafiler"
             }
         ],
+        "configuration": {
+            "title": "Yamafiler",
+            "properties": {
+                "yamafiler.useRecommendedKeybindings": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "%config.yamafiler.useRecommendedKeybindings%"
+                }
+            }
+        },
         "grammars": [
             {
                 "language": "yamafiler",
                 "scopeName": "source.yamafiler",
                 "path": "./syntaxes/yamafiler.tmLanguage.json"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "yamafiler.openFiler",
+                "key": "ctrl+shift+y",
+                "when": "config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "shift+`",
+                "command": "yamafiler.openFiler",
+                "args": {
+                    "path": "~"
+                },
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "o",
+                "command": "yamafiler.openFiler",
+                "args": {
+                    "column": "beside"
+                },
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "h",
+                "command": "yamafiler.goToParent",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "j",
+                "command": "cursorMove",
+                "args": {
+                    "to": "down",
+                    "by": "line"
+                },
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "k",
+                "command": "cursorMove",
+                "args": {
+                    "to": "up",
+                    "by": "line"
+                },
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "l",
+                "command": "yamafiler.enter",
+                "args": {
+                    "binaryPattern": "*.{jpg,jpe,jpeg,png,bmp,gif,ico,webp,avif,mp3,wav,ogg,oga,mp4,webm,pdf}",
+                    "preview": true
+                },
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "e",
+                "command": "yamafiler.enter",
+                "args": {
+                    "preview": true
+                },
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "enter",
+                "command": "yamafiler.enter",
+                "args": {
+                    "preview": true
+                },
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "shift+p",
+                "command": "yamafiler.enter",
+                "args": {
+                    "preview": true,
+                    "binaryPattern": "*.{jpg,jpe,jpeg,png,bmp,gif,ico,webp,avif,mp3,wav,ogg,oga,mp4,webm,pdf}",
+                    "column": "beside",
+                    "preserveFocus": true
+                },
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "z",
+                "command": "yamafiler.refresh",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "q",
+                "command": "workbench.action.closeActiveEditor",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "w",
+                "command": "yamafiler.openWorkspace",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "shift+w",
+                "command": "yamafiler.openWorkspace",
+                "args": {
+                    "forceNewWindow": true
+                },
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "space",
+                "command": "yamafiler.toggleSelection",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "shift+8",
+                "command": "yamafiler.toggleSelectionAll",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "shift+k",
+                "command": "yamafiler.newFolder",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "shift+n",
+                "command": "yamafiler.newFile",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "shift+m",
+                "command": "yamafiler.newMultipleFiles",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "r",
+                "command": "yamafiler.rename",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "c",
+                "command": "yamafiler.duplicate",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "shift+s",
+                "command": "yamafiler.symlink",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "d",
+                "command": "yamafiler.delete",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "m",
+                "command": "yamafiler.cut",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "y",
+                "command": "yamafiler.copy",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "shift+t",
+                "command": "yamafiler.targetForSymlink",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
+            },
+            {
+                "key": "p",
+                "command": "yamafiler.paste",
+                "when": "resourceScheme == yamafiler && editorTextFocus && config.yamafiler.useRecommendedKeybindings"
             }
         ],
         "languages": [

@@ -11,31 +11,33 @@
     "repository": {
         "entryline": {
             "comment": "Line of filer.",
+            "name": "meta.entryline.yamfiler",
             "match": "^[* ] (.{9}) (.{11}) (.+/$)?",
             "captures": {
                 "1": {
-                    "name": "variable"
+                    "name": "variable.filesize.yamafiler"
                 },
                 "2": {
-                    "name": "string"
+                    "name": "string.time.yamafiler"
                 },
                 "3": {
-                    "name": "keyword"
+                    "name": "keyword.foldername.yamafiler"
                 }
             }
         },
         "linkline": {
             "comment": "Line of symbolic link.",
+            "name": "meta.linkline.yamfiler",
             "match": "^[* ]L(.{9}) (.{11}) (.+$)",
             "captures": {
                 "1": {
-                    "name": "variable"
+                    "name": "variable.filesize.yamafiler"
                 },
                 "2": {
-                    "name": "string"
+                    "name": "string.time.yamafiler"
                 },
                 "3": {
-                    "name": "variable"
+                    "name": "variable.linkname.yamafiler"
                 }
             }
         }

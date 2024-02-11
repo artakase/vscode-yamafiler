@@ -1,0 +1,169 @@
+[
+    {
+        "command": "yamafiler.openFiler",
+        "key": "ctrl+shift+y"
+    },
+    {
+        "key": "shift+`",
+        "command": "yamafiler.openFiler",
+        "args": {
+            "path": "~"
+        },
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "o",
+        "command": "yamafiler.openFiler",
+        "args": {
+            "column": "beside"
+        },
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "h",
+        "command": "yamafiler.goToParent",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "j",
+        "command": "cursorMove",
+        "args": {
+            "to": "down",
+            "by": "line"
+        },
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "k",
+        "command": "cursorMove",
+        "args": {
+            "to": "up",
+            "by": "line"
+        },
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "l",
+        "command": "yamafiler.enter",
+        "args": {
+            "binaryPattern": "*.{jpg,jpe,jpeg,png,bmp,gif,ico,webp,avif,mp3,wav,ogg,oga,mp4,webm,pdf}",
+            "preview": true
+        },
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "e",
+        "command": "yamafiler.enter",
+        "args": {
+            "preview": true
+        },
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "enter",
+        "command": "yamafiler.enter",
+        "args": {
+            "preview": true
+        },
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "shift+p",
+        "command": "yamafiler.enter",
+        "args": {
+            "preview": true,
+            "binaryPattern": "*.{jpg,jpe,jpeg,png,bmp,gif,ico,webp,avif,mp3,wav,ogg,oga,mp4,webm,pdf}",
+            "column": "beside",
+            "preserveFocus": true
+        },
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "z",
+        "command": "yamafiler.refresh",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "q",
+        "command": "workbench.action.closeActiveEditor",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "w",
+        "command": "yamafiler.openWorkspace",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "shift+w",
+        "command": "yamafiler.openWorkspace",
+        "args": {
+            "forceNewWindow": true
+        },
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "space",
+        "command": "yamafiler.toggleSelection",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "shift+8",
+        "command": "yamafiler.toggleSelectionAll",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "shift+k",
+        "command": "yamafiler.newFolder",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "shift+n",
+        "command": "yamafiler.newFile",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "shift+m",
+        "command": "yamafiler.newMultipleFiles",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "r",
+        "command": "yamafiler.rename",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "c",
+        "command": "yamafiler.duplicate",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "shift+s",
+        "command": "yamafiler.symlink",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "d",
+        "command": "yamafiler.delete",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "m",
+        "command": "yamafiler.cut",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "y",
+        "command": "yamafiler.copy",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "shift+t",
+        "command": "yamafiler.targetForSymlink",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    },
+    {
+        "key": "p",
+        "command": "yamafiler.paste",
+        "when": "resourceScheme == yamafiler && editorTextFocus"
+    }
+]
