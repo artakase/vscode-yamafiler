@@ -102,6 +102,8 @@ export class Controller {
     }: { path?: string; column?: 'active' | 'beside'; ask?: 'never' | 'dialog' } = {}): Promise<void> {
         const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri;
         const activeUri = getTabUri(vscode.window.tabGroups.activeTabGroup.activeTab);
+        const homeUri =
+            process.platform === 'win32' ? Uri.joinPath(Uri.file(os.homedir()), '.') : Uri.file(os.homedir());
 
         let uri: Uri;
         if (ask === 'dialog') {
@@ -115,9 +117,9 @@ export class Controller {
             }
             uri = uris[0];
         } else if (path === '~') {
-            uri = Uri.file(os.homedir());
+            uri = homeUri;
         } else if (path.startsWith('~/')) {
-            uri = Uri.joinPath(Uri.file(os.homedir()), path.substring(2));
+            uri = Uri.joinPath(homeUri, path.substring(2));
         } else if (path !== '') {
             uri = Uri.file(path);
         } else if (activeUri?.scheme === YAMAFILER_SCHEME) {
@@ -132,7 +134,7 @@ export class Controller {
         } else if (workspaceUri) {
             uri = workspaceUri;
         } else {
-            uri = Uri.file(os.homedir());
+            uri = homeUri;
         }
         await this.showFiler(uri, column);
     }
