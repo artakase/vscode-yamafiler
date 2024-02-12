@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.0.5]
+
+-   Fix problem with Windows path
+-   Add "useRecommendedKeybindings" configuration
+
 ## [0.0.4]
 
 -   Use new icon
