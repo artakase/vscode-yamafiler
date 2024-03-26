@@ -120,7 +120,11 @@ export class Controller {
             uri = homeUri;
         } else if (path.startsWith('~/')) {
             uri = Uri.joinPath(homeUri, path.substring(2));
-        } else if (path !== '') {
+        } else if (path === '${workspaceFolder}' && workspaceUri) {
+            uri = workspaceUri;
+        } else if (path.startsWith('${workspaceFolder}/') && workspaceUri) {
+            uri = Uri.joinPath(workspaceUri, path.substring(19));
+        } else if (path !== '' && !path.startsWith('${workspaceFolder}')) {
             uri = Uri.file(path);
         } else if (activeUri?.scheme === YAMAFILER_SCHEME) {
             if (column === 'active') {
