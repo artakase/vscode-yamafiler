@@ -8,12 +8,15 @@
     },
     // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
     "typescript.tsc.autoDetect": "off",
-    "r.lsp.promptToInstall": false,
     "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode" // フォーマッタをprettierに指定
+    },
+    "[javascript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode" // フォーマッタをprettierに指定
     },
     "editor.formatOnSave": true, // ファイル保存時にPrettierでフォーマット
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": "explicit"
-    }
+    },
+    "eslint.experimental.useFlatConfig": true
 }
