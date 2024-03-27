@@ -87,10 +87,14 @@ export class Controller {
         if (doc.lineCount > 1) {
             selection = new vscode.Range(1, 0, 1, 0);
         }
-        await vscode.window.showTextDocument(doc, {
-            viewColumn: column === 'active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
-            selection,
-        });
+        await vscode.window
+            .showTextDocument(doc, {
+                viewColumn: column === 'active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
+                selection,
+            })
+            .then(undefined, (reason: unknown) =>
+                vscode.window.showErrorMessage(vscode.l10n.t('Could not open {0}: {1}', uri.path, getMessage(reason))),
+            );
 
         this.filerToOpen = undefined;
     }
@@ -253,10 +257,14 @@ export class Controller {
         });
         if (newBase) {
             const uri = Uri.joinPath(selection.uri, newBase);
+            let result: edition.Result;
             if (isDirectory) {
-                await edition.createDirectory(uri);
+                result = await edition.createDirectory(uri);
             } else {
-                await edition.createFile(uri);
+                result = await edition.createFile(uri);
+            }
+            if (result.error) {
+                void vscode.window.showErrorMessage(result.message);
             }
         }
         this.refresh({ resetSelection: true });
@@ -293,12 +301,16 @@ export class Controller {
         });
         if (newBase) {
             const uri = Uri.joinPath(selection.uri, newBase);
+            let result: edition.Result;
             if (mode === 'rename') {
-                await edition.rename(file.uri, uri);
+                result = await edition.rename(file.uri, uri);
             } else if (mode === 'copy') {
-                await edition.copy(file.uri, uri);
-            } else if (mode === 'symlink') {
-                await edition.symlink(file.uri, uri);
+                result = await edition.copy(file.uri, uri);
+            } else {
+                result = await edition.symlink(file.uri, uri);
+            }
+            if (result.error) {
+                void vscode.window.showErrorMessage(result.message);
             }
         }
         this.refresh({ resetSelection: true });
@@ -317,8 +329,25 @@ export class Controller {
             choiceDelete,
         );
         if (answer == choiceDelete) {
-            await Promise.all(selection.files.map((file) => edition.delete(file.uri, { recursive: true, useTrash })));
-            vscode.window.showInformationMessage(vscode.l10n.t('{0} has been removed.', pathList));
+            const results = await Promise.all(
+                selection.files.map((file) => edition.delete(file.uri, { recursive: true, useTrash })),
+            );
+            const success: string[] = [];
+            const failure: edition.Result[] = [];
+            for (const [index, result] of results.entries()) {
+                if (result.error) {
+                    console.error(result.error);
+                    failure.push(result);
+                } else {
+                    success.push(pathList[index]);
+                }
+            }
+            if (failure.length > 0) {
+                void vscode.window.showErrorMessage(failure[0].message as string);
+            }
+            if (success.length > 0) {
+                void vscode.window.showInformationMessage(vscode.l10n.t('{0} has been deleted.', pathList));
+            }
         }
         this.refresh({ resetSelection: true });
     }
@@ -352,31 +381,27 @@ export class Controller {
             vscode.window.showInformationMessage(vscode.l10n.t('Same parent.'));
             return;
         }
-        const rss: Promise<edition.Result>[] = [];
+        const promises: Promise<edition.Result>[] = [];
         for (const file of this.clipboard.files) {
             const oldUri = file.uri;
             const relPath = path.relative(this.clipboard.uri.path, oldUri.path);
             const newUri = Uri.joinPath(selection.uri, relPath);
             if (this.clipboard.mode === 'rename') {
-                rss.push(edition.rename(oldUri, newUri, { overwrite: false }));
+                promises.push(edition.rename(oldUri, newUri, { overwrite: false }));
             } else if (this.clipboard.mode === 'copy') {
-                rss.push(edition.copy(oldUri, newUri, { overwrite: false }));
-            } else if (this.clipboard.mode === 'symlink') {
-                rss.push(edition.symlink(oldUri, newUri));
+                promises.push(edition.copy(oldUri, newUri, { overwrite: false }));
+            } else {
+                promises.push(edition.symlink(oldUri, newUri));
             }
         }
-        const results = await Promise.all(rss);
+        const results = await Promise.all(promises);
         const existUris: Uri[] = [];
         for (const [index, result] of results.entries()) {
             if (result.error) {
                 if (result.error instanceof vscode.FileSystemError && result.error.code === 'FileExists') {
                     existUris.push(this.clipboard.files[index].uri);
-                } else if (result.error instanceof Error) {
-                    console.log(result.error);
-                    console.log(result.error.name);
-                    console.log(result.error.message);
                 } else {
-                    console.log(result.error);
+                    console.error(result.error);
                 }
             }
         }
@@ -397,7 +422,7 @@ export class Controller {
         if (existUris.length > 0 && choices.length > 0) {
             const pathList = existUris.map((uri) => uri.path).join('\n');
             answer = await vscode.window.showWarningMessage(
-                vscode.l10n.t('Failed. Overwrite?'),
+                vscode.l10n.t('File already exists. Overwrite?'),
                 { modal: true, detail: pathList },
                 ...choices,
             );
@@ -407,20 +432,27 @@ export class Controller {
             const overwrite = answer === overwriteAll || answer === mergeOverwrite;
             const merge = answer === mergeOverwrite || answer === skip;
 
-            const rss: Promise<edition.Result>[] = [];
+            const promises: Promise<edition.Result>[] = [];
             for (const uri of existUris) {
                 const baseName = path.basename(uri.path);
                 if (this.clipboard.mode === 'rename') {
-                    rss.push(edition.rename(uri, Uri.joinPath(rootUri, baseName), { overwrite: overwrite }));
+                    promises.push(edition.rename(uri, Uri.joinPath(rootUri, baseName), { overwrite: overwrite }));
                 } else if (this.clipboard.mode === 'copy') {
-                    rss.push(
+                    promises.push(
                         edition.copy(uri, Uri.joinPath(rootUri, baseName), { overwrite: overwrite, merge: merge }),
                     );
                 }
             }
-            const results = await Promise.all(rss);
+            const results = await Promise.all(promises);
+            let failed = false;
             results.forEach((result) => {
-                console.log(result);
+                if (result.error) {
+                    if (!failed) {
+                        void vscode.window.showErrorMessage(result.message);
+                        failed = true;
+                    }
+                    console.error(result.error);
+                }
             });
         }
 
@@ -608,7 +640,7 @@ export class Controller {
             }
         }
         if (newFileNameSet.size < batch.doc.lineCount) {
-            vscode.window.showInformationMessage(vscode.l10n.t('{0} already exists.'));
+            void vscode.window.showInformationMessage(vscode.l10n.t('Duplicated file names.'));
             return;
         }
         const promises: Promise<edition.Result>[] = [];
@@ -632,9 +664,14 @@ export class Controller {
             });
         }
         const results = await Promise.all(promises);
+        let failed = false;
         results.forEach((result) => {
             if (result.error) {
-                console.log(result.error);
+                if (!failed) {
+                    void vscode.window.showErrorMessage(result.message);
+                    failed = true;
+                }
+                console.error(result.error);
             }
         });
         this.batch.isToClose = true;

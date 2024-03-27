@@ -17,7 +17,7 @@
     "Link name": "Link name",
     "Delete this file?": "Delete this file?",
     "Delete": "Delete",
-    "{0} has been removed.": "{0} has been removed.",
+    "{0} has been deleted.": "{0} has been deleted.",
     "{0} has been cut.": "{0} has been cut.",
     "{0} has been copied.": "{0} has been copied.",
     "{0} has been targeted.": "{0} has been targeted.",
@@ -25,11 +25,17 @@
     "Overwrite": "Overwrite",
     "Overwrite (Merge Folders)": "Overwrite (Merge Folders)",
     "Skip": "Skip",
-    "Failed. Overwrite?": "Failed. Overwrite?",
+    "File already exists. Overwrite?": "File already exists. Overwrite?",
     "Batch already exists. Please save or cancel it first.": "Batch already exists. Please save or cancel it first.",
     "Input file names. For folder names, add \"/\" (e.g. \"foldername/\"). Save the tab manually to execute. Close the tab to cancel.": "Input file names. For folder names, add \"/\" (e.g. \"foldername/\"). Save the tab manually to execute. Close the tab to cancel.",
     "Edit file names. Save this tab manually to execute. Close this tab to cancel.": "Edit file names. Save this tab manually to execute. Close this tab to cancel.",
     "Edit path names. Save this tab manually to execute. Close this tab to cancel.": "Edit path names. Save this tab manually to execute. Close this tab to cancel.",
     "The line count does not match the file selection!": "The line count does not match the file selection!",
-    "Invalid value at line {0}: {1}": "Invalid value at line {0}: {1}"
+    "Invalid value at line {0}: {1}": "Invalid value at line {0}: {1}",
+    "Duplicated file names.": "Duplicated file names.",
+    "Could not create {0}: {1}": "Could not create {0}: {1}",
+    "Could not rename {0} to {1}: {2}": "Could not rename {0} to {1}: {2}",
+    "Could not copy {0} to {1}: {2}": "Could not copy {0} to {1}: {2}",
+    "Could not delete {0}: {1}": "Could not delete {0}: {1}",
+    "Could not link {0} to {1}: {2}": "Could not link {0} to {1}: {2}"
 }

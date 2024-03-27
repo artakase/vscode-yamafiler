@@ -2,61 +2,88 @@ import * as fsPromises from 'fs/promises';
 import * as vscode from 'vscode';
 import { Uri } from 'vscode';
 
-export type Result<T = void> = { value: T; error: undefined } | { value: undefined; error: Error };
+export type Result<T = void> =
+    | { value: T; error: undefined; message: undefined }
+    | { value: undefined; error: Error; message: string };
 
-async function resolveResult<T>(thenable: Thenable<T>): Promise<Result<T>> {
+async function resolveResult<T>(
+    thenable: Thenable<T>,
+    messageFunc: (errorMessage: string) => string,
+): Promise<Result<T>> {
     try {
-        return { value: await thenable, error: undefined };
-    } catch (error) {
-        if (error instanceof vscode.FileSystemError) {
-            return { value: undefined, error: error };
-        } else if (error instanceof Error) {
-            if (error.name === 'SystemError') {
-                if (error.message.startsWith('Target already exists:')) {
-                    return { value: undefined, error: vscode.FileSystemError.FileExists(error.message) };
-                }
+        return { value: await thenable, error: undefined, message: undefined };
+    } catch (e) {
+        const value = undefined;
+        let error: Error;
+        if (e instanceof vscode.FileSystemError) {
+            error = e;
+        } else if (e instanceof Error) {
+            if (e.name === 'SystemError' && e.message.startsWith('Target already exists:')) {
+                error = vscode.FileSystemError.FileExists(e.message);
+            } else {
+                error = e;
             }
-            return { value: undefined, error: error };
-        } else if (error instanceof Object) {
-            return { value: undefined, error: Error(error.toString()) };
+        } else if (e instanceof Object) {
+            error = Error(e.toString());
         } else {
-            return { value: undefined, error: Error('Unknown error.') };
+            error = Error('Unknown error.');
         }
+        const message = messageFunc(error.message);
+        return { value, error, message };
     }
 }
 
-export function createDirectory(uri: Uri): Promise<Result<void>> {
-    return resolveResult(vscode.workspace.fs.createDirectory(uri));
+export function createDirectory(uri: Uri): Promise<Result> {
+    function messageFunc(errorMessage: string) {
+        return vscode.l10n.t('Could not create {0}: {1}', uri.path, errorMessage);
+    }
+    return resolveResult(vscode.workspace.fs.createDirectory(uri), messageFunc);
 }
 
 export function createFile(uri: Uri): Promise<Result> {
-    return resolveResult(vscode.workspace.fs.writeFile(uri, new Uint8Array()));
+    function messageFunc(errorMessage: string) {
+        return vscode.l10n.t('Could not create {0}: {1}', uri.path, errorMessage);
+    }
+    return resolveResult(vscode.workspace.fs.writeFile(uri, new Uint8Array()), messageFunc);
 }
 
 export function rename(oldUri: Uri, newUri: Uri, options?: { overwrite?: boolean }): Promise<Result> {
-    return resolveResult(vscode.workspace.fs.rename(oldUri, newUri, { overwrite: options?.overwrite }));
+    function messageFunc(errorMessage: string) {
+        return vscode.l10n.t('Could not rename {0} to {1}: {2}', oldUri.path, newUri.path, errorMessage);
+    }
+    return resolveResult(vscode.workspace.fs.rename(oldUri, newUri, { overwrite: options?.overwrite }), messageFunc);
 }
 
 export function copy(oldUri: Uri, newUri: Uri, options?: { overwrite?: boolean; merge?: boolean }): Promise<Result> {
+    function messageFunc(errorMessage: string) {
+        return vscode.l10n.t('Could not copy {0} to {1}: {2}', oldUri.path, newUri.path, errorMessage);
+    }
     if (options?.merge) {
         return resolveResult(
             fsPromises.cp(oldUri.path, newUri.path, {
                 recursive: true,
-                force: options?.overwrite,
+                force: options.overwrite,
                 errorOnExist: true,
             }),
+            messageFunc,
         );
     } else {
-        return resolveResult(vscode.workspace.fs.copy(oldUri, newUri, { overwrite: options?.overwrite }));
+        return resolveResult(vscode.workspace.fs.copy(oldUri, newUri, { overwrite: options?.overwrite }), messageFunc);
     }
 }
 
 function _delete(uri: Uri, options?: { recursive?: boolean; useTrash?: boolean }): Promise<Result> {
-    return resolveResult(vscode.workspace.fs.delete(uri, options));
+    function messageFunc(errorMessage: string) {
+        return vscode.l10n.t('Failed to delete {0}: {1}', uri.path, errorMessage);
+    }
+    return resolveResult(vscode.workspace.fs.delete(uri, options), messageFunc);
 }
 
 export { _delete as delete };
 
 export function symlink(targetUri: Uri, linkUri: Uri): Promise<Result> {
-    return resolveResult(fsPromises.symlink(targetUri.path, linkUri.path));
+    function messageFunc(errorMessage: string) {
+        return vscode.l10n.t('Could not link {0} to {1}: {2}', linkUri.path, targetUri.path, errorMessage);
+    }
+    return resolveResult(fsPromises.symlink(targetUri.path, linkUri.path), messageFunc);
 }

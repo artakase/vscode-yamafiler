@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { filesize } from 'filesize';
 import { Uri } from 'vscode';
-import { FileItem, FolderData, YAMAFILER_SCHEME } from './utils';
+import { FileItem, FolderData, getMessage, YAMAFILER_SCHEME } from './utils';
 
 export function sortFunc(a: FileItem, b: FileItem): number {
     const dirOrder = (a.isDirectory ? 0 : 1) - (b.isDirectory ? 0 : 1);
@@ -51,7 +51,8 @@ export class YamafilerProvider implements vscode.TextDocumentContentProvider {
         try {
             folder = await this.readFolder(uri.with({ scheme: 'file' }));
         } catch (error) {
-            console.log(error);
+            console.error(error);
+            void vscode.window.showErrorMessage(vscode.l10n.t('Could not read {0}: {1}', uri.path, getMessage(error)));
             return undefined;
         }
         const header = `${tildify(uri.path)}:`;
