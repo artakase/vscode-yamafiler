@@ -33,7 +33,7 @@ Yamafiler is a file manager for VS Code.
 | `R`                | Rename                                           |
 | `C`                | Duplicate in the same folder                     |
 | `Shift` `S`        | Create symlink in the same folder (Linux, macOS) |
-| `D`                | Delete                                           |
+| `D`                | Move to trash                                    |
 | `M`                | Move                                             |
 | `Y`                | Copy                                             |
 | `Shift` `T`        | Target of symlink (Linux, macOS)                 |
@@ -51,7 +51,7 @@ An equivalent keybindings.json file is available [here](docs/keybindings.json).
 
 -   `yamafiler.openFiler` - Opens a filer.
 
-    -   _path_ - Path to a folder. '~' opens the home folder.
+    -   _path_ - Path to a folder. '~' opens the home folder. '${workspaceFolder}' opens the workspace folder.
     -   _column_ = 'active' - Column in which the filer should be shown. 'active' or 'beside'.
     -   _ask_ = 'never' - How to ask a folder to show in the filer. By default it shows the parent folder of the current file. 'dialog' shows a folder selection dialog.
 

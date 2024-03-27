@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.1.0]
+
+-   Support "${workspaceFolder}" in path for "yamafiler.openFiler"
+-   Fix sticky scroll for symlinks
+-   Improve error handling
+
 ## [0.0.5]
 
 -   Fix problem with Windows path
