@@ -5,7 +5,7 @@ import { minimatch } from 'minimatch';
 import * as vscode from 'vscode';
 import { Uri } from 'vscode';
 import * as edition from './edition';
-import { makeValidater } from './validater';
+import { makeValidator } from './validator';
 import { YamafilerProvider } from './provider';
 import {
     BatchDocument,
@@ -255,7 +255,7 @@ export class Controller {
         }
         const newBase = await vscode.window.showInputBox({
             prompt: isDirectory ? vscode.l10n.t('Folder name') : vscode.l10n.t('File name'),
-            validateInput: makeValidater(selection.fileBases),
+            validateInput: makeValidator(selection.fileBases),
         });
         if (newBase) {
             const uri = Uri.joinPath(selection.uri, newBase);
@@ -299,7 +299,7 @@ export class Controller {
             value: oldBase,
             valueSelection: [0, end],
             prompt,
-            validateInput: makeValidater(selection.fileBases),
+            validateInput: makeValidator(selection.fileBases),
         });
         if (newBase) {
             const uri = Uri.joinPath(selection.uri, newBase);
@@ -620,7 +620,7 @@ export class Controller {
             return;
         }
 
-        const validateFileName = makeValidater(batch.selection.fileBases);
+        const validateFileName = makeValidator(batch.selection.fileBases);
 
         if (batch.mode === 'rename' || batch.mode === 'copy' || batch.mode === 'symlink') {
             if (batch.doc.lineCount !== batch.selection.files.length) {
