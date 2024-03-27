@@ -10,7 +10,7 @@ import * as process from 'process';
 import * as vscode from 'vscode';
 
 // Reference: https://en.wikipedia.org/wiki/Filename
-const WINDOWS_INVALID_FILE_CHARS = /[\\/:\*\?"<>\|]/g;
+const WINDOWS_INVALID_FILE_CHARS = /[\\/:*?"<>|]/g;
 const UNIX_INVALID_FILE_CHARS = /[\\/]/g;
 const WINDOWS_FORBIDDEN_NAMES = /^(con|prn|aux|clock\$|nul|lpt[0-9]|com[0-9])(\.(.*?))?$/i;
 
@@ -37,7 +37,7 @@ export function makeValidater(
             return vscode.l10n.t('Reserved file name.');
         }
 
-        if (isWindowsOS && name[name.length - 1] === '.') {
+        if (isWindowsOS && name.endsWith('.')) {
             return vscode.l10n.t('The name cannot end with a "." on Windows.');
         }
 

@@ -9,7 +9,7 @@ import { YAMAFILER_SCHEME } from './utils';
 export function activate(context: vscode.ExtensionContext): void {
     const controller = new Controller(context);
 
-    function pushCommand(name: string, callback: () => any) {
+    function pushCommand(name: string, callback: () => void | Promise<void>) {
         context.subscriptions.push(vscode.commands.registerCommand(`yamafiler.${name}`, callback, controller));
     }
 
@@ -30,14 +30,28 @@ export function activate(context: vscode.ExtensionContext): void {
     pushCommand('duplicate', () => controller.fileAction('copy'));
     pushCommand('symlink', () => controller.fileAction('symlink'));
     pushCommand('delete', controller.delete);
-    pushCommand('cut', () => controller.setClipboard('rename'));
-    pushCommand('copy', () => controller.setClipboard('copy'));
-    pushCommand('targetForSymlink', () => controller.setClipboard('symlink'));
+    pushCommand('cut', () => {
+        controller.setClipboard('rename');
+    });
+    pushCommand('copy', () => {
+        controller.setClipboard('copy');
+    });
+    pushCommand('targetForSymlink', () => {
+        controller.setClipboard('symlink');
+    });
     pushCommand('paste', controller.paste);
-    pushCommand('select', () => controller.setSelection('on'));
-    pushCommand('deselect', () => controller.setSelection('off'));
-    pushCommand('toggleSelection', () => controller.setSelection('toggle'));
-    pushCommand('toggleSelectionAll', () => controller.setSelection('toggleAll'));
+    pushCommand('select', () => {
+        controller.setSelection('on');
+    });
+    pushCommand('deselect', () => {
+        controller.setSelection('off');
+    });
+    pushCommand('toggleSelection', () => {
+        controller.setSelection('toggle');
+    });
+    pushCommand('toggleSelectionAll', () => {
+        controller.setSelection('toggleAll');
+    });
 }
 
 // This method is called when your extension is deactivated
