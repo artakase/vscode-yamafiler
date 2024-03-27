@@ -146,6 +146,11 @@
                 }
             }
         },
+        "configurationDefaults": {
+            "[yamafiler]": {
+                "editor.stickyScroll.maxLineCount": 1
+            }
+        },
         "grammars": [
             {
                 "language": "yamafiler",
