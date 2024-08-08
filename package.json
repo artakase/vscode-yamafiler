@@ -18,7 +18,7 @@
         "url": "https://github.com/artakase/vscode-yamafiler/issues"
     },
     "engines": {
-        "vscode": "^1.87.0"
+        "vscode": "^1.92.0"
     },
     "categories": [
         "Other"
@@ -350,19 +350,19 @@
         "test": "node ./out/test/runTest.js"
     },
     "dependencies": {
-        "filesize": "^10.1.1",
-        "minimatch": "^9.0.3"
+        "filesize": "^10.1.4",
+        "minimatch": "^10.0.1"
     },
     "devDependencies": {
-        "@types/mocha": "^10.0.6",
-        "@types/node": "^20.11.30",
-        "@types/vscode": "^1.87.0",
-        "@vscode/test-electron": "^2.3.9",
-        "eslint": "^8.57.0",
-        "glob": "^10.3.10",
-        "mocha": "^10.4.0",
-        "typescript": "^5.4.3",
-        "typescript-eslint": "^7.4.0"
+        "@types/mocha": "^10.0.7",
+        "@types/node": "^20.x",
+        "@types/vscode": "^1.92.0",
+        "@vscode/test-electron": "^2.4.1",
+        "eslint": "^9.8.0",
+        "glob": "^11.0.0",
+        "mocha": "^10.7.0",
+        "typescript": "^5.5.4",
+        "typescript-eslint": "^8.0.1"
     },
     "preview": true
 }
