@@ -5,7 +5,12 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config({
-    extends: [eslint.configs.recommended, ...tseslint.configs.strictTypeChecked, eslintConfigPrettier],
+    extends: [
+        eslint.configs.recommended,
+        ...tseslint.configs.strictTypeChecked,
+        ...tseslint.configs.stylisticTypeChecked,
+        eslintConfigPrettier,
+    ],
     plugins: {
         '@typescript-eslint': tseslint.plugin,
     },

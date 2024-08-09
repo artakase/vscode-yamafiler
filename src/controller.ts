@@ -345,7 +345,11 @@ export class Controller {
                 }
             }
             if (failure.length > 0) {
-                void vscode.window.showErrorMessage(failure[0].message as string);
+                if (failure[0].message) {
+                    void vscode.window.showErrorMessage(failure[0].message);
+                } else {
+                    void vscode.window.showErrorMessage('failure');
+                }
             }
             if (success.length > 0) {
                 void vscode.window.showInformationMessage(vscode.l10n.t('{0} has been deleted.', pathList));

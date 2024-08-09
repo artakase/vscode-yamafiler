@@ -14,7 +14,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }
 
     context.subscriptions.push(
-        vscode.workspace.registerTextDocumentContentProvider(YAMAFILER_SCHEME, controller.provider),
+        vscode.workspace.registerTextDocumentContentProvider(YAMAFILER_SCHEME, controller.provider)
     );
 
     pushCommand('openFiler', controller.openFiler);
@@ -53,6 +53,3 @@ export function activate(context: vscode.ExtensionContext): void {
         controller.setSelection('toggleAll');
     });
 }
-
-// This method is called when your extension is deactivated
-export function deactivate(): void {}
