@@ -8,7 +8,7 @@ export type Result<T = void> =
 
 async function resolveResult<T>(
     thenable: Thenable<T>,
-    messageFunc: (errorMessage: string) => string,
+    messageFunc: (errorMessage: string) => string
 ): Promise<Result<T>> {
     try {
         return { value: await thenable, error: undefined, message: undefined };
@@ -65,7 +65,7 @@ export function copy(oldUri: Uri, newUri: Uri, options?: { overwrite?: boolean; 
                 force: options.overwrite,
                 errorOnExist: true,
             }),
-            messageFunc,
+            messageFunc
         );
     } else {
         return resolveResult(vscode.workspace.fs.copy(oldUri, newUri, { overwrite: options?.overwrite }), messageFunc);

@@ -15,7 +15,7 @@ const UNIX_INVALID_FILE_CHARS = /[\\/]/g;
 const WINDOWS_FORBIDDEN_NAMES = /^(con|prn|aux|clock\$|nul|lpt[0-9]|com[0-9])(\.(.*?))?$/i;
 
 export function makeValidator(
-    exists: Set<string> = new Set<string>(),
+    exists: Set<string> = new Set<string>()
 ): (name: string | null | undefined) => string | undefined {
     const isWindowsOS = process.platform === 'win32';
     const invalidFileChars = isWindowsOS ? WINDOWS_INVALID_FILE_CHARS : UNIX_INVALID_FILE_CHARS;

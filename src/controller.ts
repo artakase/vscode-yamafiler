@@ -95,7 +95,7 @@ export class Controller {
                 selection,
             })
             .then(undefined, (reason: unknown) =>
-                vscode.window.showErrorMessage(vscode.l10n.t('Could not open {0}: {1}', uri.path, getMessage(reason))),
+                vscode.window.showErrorMessage(vscode.l10n.t('Could not open {0}: {1}', uri.path, getMessage(reason)))
             );
 
         this.filerToOpen = undefined;
@@ -175,7 +175,7 @@ export class Controller {
         ) {
             vscode.env.openExternal(cursored.uri).then(undefined, (reason) => {
                 void vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not open {0}: {1}', cursored.uri.path, getMessage(reason)),
+                    vscode.l10n.t('Could not open {0}: {1}', cursored.uri.path, getMessage(reason))
                 );
             });
         } else if (cursored.isDirectory) {
@@ -189,7 +189,7 @@ export class Controller {
         } else if (minimatch(cursored.uri.path, externalPattern, { matchBase: true, dot: true, noext: true })) {
             vscode.env.openExternal(cursored.uri).then(undefined, (reason) => {
                 void vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not open {0}: {1}', cursored.uri.path, getMessage(reason)),
+                    vscode.l10n.t('Could not open {0}: {1}', cursored.uri.path, getMessage(reason))
                 );
             });
         } else {
@@ -237,7 +237,7 @@ export class Controller {
         const success = vscode.workspace.updateWorkspaceFolders(
             vscode.workspace.workspaceFolders?.length ?? 0,
             undefined,
-            ...files.map((file) => ({ uri: file.uri })),
+            ...files.map((file) => ({ uri: file.uri }))
         );
         if (!success) {
             void vscode.window.showErrorMessage(vscode.l10n.t('Failed to add to workspace.'));
@@ -328,11 +328,11 @@ export class Controller {
         const answer = await vscode.window.showWarningMessage(
             vscode.l10n.t('Delete this file?'),
             { modal: true, detail: pathList },
-            choiceDelete,
+            choiceDelete
         );
         if (answer == choiceDelete) {
             const results = await Promise.all(
-                selection.files.map((file) => edition.delete(file.uri, { recursive: true, useTrash })),
+                selection.files.map((file) => edition.delete(file.uri, { recursive: true, useTrash }))
             );
             const success: string[] = [];
             const failure: edition.Result[] = [];
@@ -426,7 +426,7 @@ export class Controller {
             answer = await vscode.window.showWarningMessage(
                 vscode.l10n.t('File already exists. Overwrite?'),
                 { modal: true, detail: pathList },
-                ...choices,
+                ...choices
             );
         }
         if (answer) {
@@ -441,7 +441,7 @@ export class Controller {
                     promises.push(edition.rename(uri, Uri.joinPath(rootUri, baseName), { overwrite: overwrite }));
                 } else if (this.clipboard.mode === 'copy') {
                     promises.push(
-                        edition.copy(uri, Uri.joinPath(rootUri, baseName), { overwrite: overwrite, merge: merge }),
+                        edition.copy(uri, Uri.joinPath(rootUri, baseName), { overwrite: overwrite, merge: merge })
                     );
                 }
             }
@@ -503,7 +503,7 @@ export class Controller {
             selection.folder.selectedIndexes.splice(
                 leftIndex,
                 rightIndex - leftIndex,
-                ...Array.from({ length: end - start }, (_, i) => start + i),
+                ...Array.from({ length: end - start }, (_, i) => start + i)
             );
         } else {
             selection.folder.selectedIndexes.splice(leftIndex, rightIndex - leftIndex);
@@ -562,7 +562,7 @@ export class Controller {
             await vscode.workspace.fs.writeFile(batchFileUri, new Uint8Array());
         } else {
             const oldNames = selection.files.map(
-                (file) => path.basename(file.uri.path) + (file.isDirectory ? '/' : ''),
+                (file) => path.basename(file.uri.path) + (file.isDirectory ? '/' : '')
             );
             await vscode.workspace.fs.writeFile(originalFileUri, new TextEncoder().encode(oldNames.join('\n')));
             await vscode.workspace.fs.writeFile(batchFileUri, new TextEncoder().encode(oldNames.join('\n')));
@@ -573,15 +573,15 @@ export class Controller {
             await vscode.window.showTextDocument(doc, { preview: false });
             void vscode.window.showInformationMessage(
                 vscode.l10n.t(
-                    'Input file names. For folder names, add "/" (e.g. "foldername/"). Save the tab manually to execute. Close the tab to cancel.',
-                ),
+                    'Input file names. For folder names, add "/" (e.g. "foldername/"). Save the tab manually to execute. Close the tab to cancel.'
+                )
             );
         } else if (mode === 'rename') {
             void vscode.commands.executeCommand('vscode.diff', originalFileUri, batchFileUri, 'Old Names ↔ New Names', {
                 preview: false,
             });
             void vscode.window.showInformationMessage(
-                vscode.l10n.t('Edit file names. Save this tab manually to execute. Close this tab to cancel.'),
+                vscode.l10n.t('Edit file names. Save this tab manually to execute. Close this tab to cancel.')
             );
         } else if (mode === 'copy') {
             void vscode.commands.executeCommand(
@@ -591,10 +591,10 @@ export class Controller {
                 'Source Names ↔ Dest Names',
                 {
                     preview: false,
-                },
+                }
             );
             void vscode.window.showInformationMessage(
-                vscode.l10n.t('Edit file names. Save this tab manually to execute. Close this tab to cancel.'),
+                vscode.l10n.t('Edit file names. Save this tab manually to execute. Close this tab to cancel.')
             );
         } else {
             void vscode.commands.executeCommand(
@@ -604,10 +604,10 @@ export class Controller {
                 'Target Names ↔ Path Names',
                 {
                     preview: false,
-                },
+                }
             );
             void vscode.window.showInformationMessage(
-                vscode.l10n.t('Edit path names. Save this tab manually to execute. Close this tab to cancel.'),
+                vscode.l10n.t('Edit path names. Save this tab manually to execute. Close this tab to cancel.')
             );
         }
         this.batch = { mode, doc, selection, isToClose: false };
@@ -625,7 +625,7 @@ export class Controller {
         if (batch.mode === 'rename' || batch.mode === 'copy' || batch.mode === 'symlink') {
             if (batch.doc.lineCount !== batch.selection.files.length) {
                 void vscode.window.showInformationMessage(
-                    vscode.l10n.t('The line count does not match the file selection!'),
+                    vscode.l10n.t('The line count does not match the file selection!')
                 );
                 return;
             }
@@ -643,7 +643,7 @@ export class Controller {
             const message = validateFileName(newBase);
             if (message) {
                 void vscode.window.showInformationMessage(
-                    vscode.l10n.t('Invalid value at line {0}: {1}', i + 1, message),
+                    vscode.l10n.t('Invalid value at line {0}: {1}', i + 1, message)
                 );
                 return;
             }

@@ -84,7 +84,7 @@ export class YamafilerProvider implements vscode.TextDocumentContentProvider {
         const selectedIndexes: number[] = [];
         if (cachedFolder) {
             const selectedFileNames = new Set(
-                cachedFolder.selectedIndexes.map((index) => cachedFolder.files[index].uri.path),
+                cachedFolder.selectedIndexes.map((index) => cachedFolder.files[index].uri.path)
             );
             files.forEach((file, index) => {
                 if (selectedFileNames.has(file.uri.path)) {
