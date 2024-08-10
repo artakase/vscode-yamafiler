@@ -335,8 +335,8 @@
           ".yamafiler"
         ],
         "icon": {
-          "light": "images/icon.png",
-          "dark": "images/icon.png"
+          "light": "images/icon.svg",
+          "dark": "images/icon.svg"
         }
       }
     ]
