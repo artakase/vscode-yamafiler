@@ -15,6 +15,8 @@ export default tseslint.config({
         '@typescript-eslint': tseslint.plugin,
     },
     languageOptions: {
+        ecmaVersion: 2020,
+        sourceType: 'module',
         parser: tseslint.parser,
         parserOptions: {
             project: true,
