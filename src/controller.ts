@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as process from 'process';
@@ -559,9 +560,9 @@ export class Controller {
             void vscode.window.showErrorMessage(vscode.l10n.t('Batch already exists. Please save or cancel it first.'));
             return;
         }
-        this.tmpDirUri ??= Uri.file(__dirname);
-        const originalFileUri = vscode.Uri.joinPath(this.tmpDirUri, '.Original.txt');
-        const batchFileUri = vscode.Uri.joinPath(this.tmpDirUri, '.FileNames.txt');
+        this.tmpDirUri ??= Uri.file(fs.mkdtempSync(path.join(os.tmpdir(), 'yamafiler-')));
+        const originalFileUri = vscode.Uri.joinPath(this.tmpDirUri, '.Original.yamafiler-batch');
+        const batchFileUri = vscode.Uri.joinPath(this.tmpDirUri, '.FileNames.yamafiler-batch');
         if (mode === 'create') {
             await vscode.workspace.fs.writeFile(batchFileUri, new Uint8Array());
         } else {

@@ -338,6 +338,16 @@
           "light": "images/icon.svg",
           "dark": "images/icon.svg"
         }
+      },
+      {
+        "id": "yamafiler-batch",
+        "extensions": [
+          ".yamafiler-batch"
+        ],
+        "icon": {
+          "light": "images/icon.svg",
+          "dark": "images/icon.svg"
+        }
       }
     ]
   },
