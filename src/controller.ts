@@ -626,8 +626,12 @@ export class Controller {
 
         const validateFileName = makeValidator(batch.selection.fileBases);
 
+        const batchLineCount = batch.doc.lineAt(batch.doc.lineCount - 1).isEmptyOrWhitespace
+            ? batch.doc.lineCount - 1
+            : batch.doc.lineCount;
+
         if (batch.mode === 'rename' || batch.mode === 'copy' || batch.mode === 'symlink') {
-            if (batch.doc.lineCount !== batch.selection.files.length) {
+            if (batchLineCount !== batch.selection.files.length) {
                 void vscode.window.showInformationMessage(
                     vscode.l10n.t('The line count does not match the file selection!')
                 );
@@ -638,7 +642,7 @@ export class Controller {
         const newFileNameSet = new Set<string>();
         const createUris: [Uri, boolean][] = [];
         const moveUris: [Uri, Uri][] = [];
-        for (let i = 0; i < batch.doc.lineCount; i++) {
+        for (let i = 0; i < batchLineCount; i++) {
             let newBase = batch.doc.lineAt(i).text;
             const isDirectory = batch.mode === 'create' ? newBase.endsWith('/') : batch.selection.files[i].isDirectory;
             if (newBase.endsWith('/')) {
@@ -659,7 +663,7 @@ export class Controller {
                 moveUris.push([batch.selection.files[i].uri, newUri]);
             }
         }
-        if (newFileNameSet.size < batch.doc.lineCount) {
+        if (newFileNameSet.size < batchLineCount) {
             void vscode.window.showInformationMessage(vscode.l10n.t('Duplicated file names.'));
             return;
         }
@@ -708,7 +712,7 @@ export class Controller {
         console.log(getTabUri(at));
         if (
             (at?.input instanceof vscode.TabInputText || at?.input instanceof vscode.TabInputTextDiff) &&
-            getTabUri(at) === batch.doc.uri
+            getTabUri(at)?.path === batch.doc.uri.path
         ) {
             void vscode.window.tabGroups.close(at);
         }
