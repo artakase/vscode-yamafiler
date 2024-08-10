@@ -1,45 +1,70 @@
 {
+    "name": "Yamafiler",
     "scopeName": "source.yamafiler",
     "patterns": [
         {
-            "include": "#entryline"
+            "include": "#header"
         },
         {
-            "include": "#linkline"
+            "include": "#entryline"
         }
     ],
     "repository": {
-        "entryline": {
-            "comment": "Line of filer.",
-            "name": "meta.entryline.yamfiler",
-            "match": "^[* ] (.{9}) (.{11}) (.+/$)?",
-            "captures": {
-                "1": {
-                    "name": "variable.filesize.yamafiler"
-                },
-                "2": {
-                    "name": "string.time.yamafiler"
-                },
-                "3": {
-                    "name": "keyword.foldername.yamafiler"
-                }
-            }
+        "header": {
+            "name": "markup.heading.yamafiler",
+            "match": "\\A.*$"
         },
-        "linkline": {
-            "comment": "Line of symbolic link.",
-            "name": "meta.linkline.yamfiler",
-            "match": "^[* ]L(.{9}) (.{11}) (.+$)",
-            "captures": {
-                "1": {
-                    "name": "variable.filesize.yamafiler"
+        "entryline": {
+            "patterns": [
+                {
+                    "comment": "Line of filer.",
+                    "name": "meta.entryline.yamfiler",
+                    "match": "^[* ] (.{9}) (.{11}) (.+/$)?",
+                    "captures": {
+                        "1": {
+                            "name": "variable.filesize.yamafiler"
+                        },
+                        "2": {
+                            "name": "string.time.yamafiler"
+                        },
+                        "3": {
+                            "name": "keyword.foldername.yamafiler"
+                        }
+                    }
                 },
-                "2": {
-                    "name": "string.time.yamafiler"
+                {
+                    "comment": "Line of symbolic link.",
+                    "name": "meta.linkline.yamfiler",
+                    "match": "^[* ]L(.{9}) (.{11}) (.+$)",
+                    "captures": {
+                        "1": {
+                            "name": "variable.filesize.yamafiler"
+                        },
+                        "2": {
+                            "name": "string.time.yamafiler"
+                        },
+                        "3": {
+                            "name": "variable.linkname.yamafiler"
+                        }
+                    }
                 },
-                "3": {
-                    "name": "variable.linkname.yamafiler"
+                {
+                    "comment": "Line of broken symbolic link.",
+                    "name": "meta.brokenlink.yamfiler",
+                    "match": "^[* ]l(.{9}) (.{11}) (.+$)",
+                    "captures": {
+                        "1": {
+                            "name": "variable.filesize.yamafiler"
+                        },
+                        "2": {
+                            "name": "string.time.yamafiler"
+                        },
+                        "3": {
+                            "name": "invalid.brokenlink.yamafiler"
+                        }
+                    }
                 }
-            }
+            ]
         }
     }
 }

@@ -18,7 +18,12 @@ function makeLine(file: FileItem, isSelected: boolean): string {
     const fileName = path.basename(file.uri.path);
     const markSelected = isSelected ? '*' : ' ';
     const markDirectory = file.isDirectory ? '/' : '';
-    const markSymbolicLink = file.isSymbolicLink ? 'L' : ' ';
+    const markSymbolicLink =
+        file.isSymbolicLink && file.stats.type & (vscode.FileType.Directory | vscode.FileType.File)
+            ? 'L'
+            : file.isSymbolicLink
+            ? 'l'
+            : ' ';
     const sizeStr = file.isDirectory
         ? ''
         : filesize(file.stats.size, { base: 2, standard: 'jedec', round: 1, symbols: { B: ' B' } });
