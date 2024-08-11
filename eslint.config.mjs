@@ -25,7 +25,6 @@ export default tseslint.config({
     },
     rules: {
         '@typescript-eslint/no-base-to-string': 'off',
-        '@typescript-eslint/restrict-template-expressions': 'off',
         '@typescript-eslint/unbound-method': 'off',
     },
     files: ['src/**/*.ts'],

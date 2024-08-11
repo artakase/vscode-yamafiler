@@ -82,7 +82,7 @@ export class YamafilerProvider implements vscode.TextDocumentContentProvider {
                     isSymbolicLink: !!(filetype & vscode.FileType.SymbolicLink),
                 });
             } catch (err) {
-                console.log(`Could not get stat of ${fileUri}: ${err}`);
+                console.log(`Could not get stat of ${fileUri.toString()}: ${getMessage(err)}`);
             }
         }
         files.sort(sortFunc);
