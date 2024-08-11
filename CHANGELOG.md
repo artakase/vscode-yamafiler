@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.1.1]
+
+-   Improve batch behavior
+-   Update icons
+-   Add yamafiler-batch language
+-   Detect broken symbolic link
+
 ## [0.1.0]
 
 -   Support "${workspaceFolder}" in path for "yamafiler.openFiler"

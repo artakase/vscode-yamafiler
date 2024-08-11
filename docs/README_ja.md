@@ -1,6 +1,6 @@
 # Yamafiler
 
-Yamafiler は VS Code 用のファイルマネージャーです。
+Yamafiler は VS Code 用のテキストベースのファイルマネージャーです。
 
 ![demo](../images/demo.gif)
 
