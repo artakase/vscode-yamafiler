@@ -172,7 +172,12 @@ export class Controller {
         }
         if (
             cursored.isDirectory &&
-            minimatch(cursored.uri.path, externalFolderPattern, { matchBase: true, dot: true, noext: true })
+            minimatch(cursored.uri.path, externalFolderPattern, {
+                matchBase: true,
+                dot: true,
+                noext: true,
+                nocase: true,
+            })
         ) {
             vscode.env.openExternal(cursored.uri).then(undefined, (reason) => {
                 void vscode.window.showErrorMessage(
@@ -181,13 +186,17 @@ export class Controller {
             });
         } else if (cursored.isDirectory) {
             void this.showFiler(cursored.uri, 'active');
-        } else if (minimatch(cursored.uri.path, binaryPattern, { matchBase: true, dot: true, noext: true })) {
+        } else if (
+            minimatch(cursored.uri.path, binaryPattern, { matchBase: true, dot: true, noext: true, nocase: true })
+        ) {
             void vscode.commands.executeCommand('vscode.open', cursored.uri, {
                 viewColumn: column === 'active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
                 preserveFocus: preserveFocus,
                 prevew: preview,
             });
-        } else if (minimatch(cursored.uri.path, externalPattern, { matchBase: true, dot: true, noext: true })) {
+        } else if (
+            minimatch(cursored.uri.path, externalPattern, { matchBase: true, dot: true, noext: true, nocase: true })
+        ) {
             vscode.env.openExternal(cursored.uri).then(undefined, (reason) => {
                 void vscode.window.showErrorMessage(
                     vscode.l10n.t('Could not open {0}: {1}', cursored.uri.path, getMessage(reason))
