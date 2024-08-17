@@ -203,11 +203,17 @@ export class Controller {
                 );
             });
         } else {
-            void vscode.window.showTextDocument(cursored.uri, {
-                viewColumn: column === 'active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
-                preserveFocus: preserveFocus,
-                preview: preview,
-            });
+            vscode.window
+                .showTextDocument(cursored.uri, {
+                    viewColumn: column === 'active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
+                    preserveFocus: preserveFocus,
+                    preview: preview,
+                })
+                .then(undefined, (reason) => {
+                    void vscode.window.showErrorMessage(
+                        vscode.l10n.t('Could not open {0}: {1}', cursored.uri.path, getMessage(reason))
+                    );
+                });
         }
     }
 
