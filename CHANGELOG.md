@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.1.2]
+
+-   Support case insensitive patterns
+-   Show error when file cannot be opened
+-   Properly close batch on Windows
+
 ## [0.1.1]
 
 -   Improve batch behavior
