@@ -32,13 +32,13 @@ function makeLine(file: FileItem, isSelected: boolean): string {
 }
 
 function tildify(p: string): string {
-    const relPath = path.relative(os.homedir(), p);
+    const relPath = path.relative(Uri.file(os.homedir()).path, Uri.file(p).path);
     if (relPath === '') {
         return '~';
     } else if (relPath.startsWith('..')) {
         return p;
     } else {
-        return `~/${relPath}`;
+        return `~${Uri.file(relPath).path}`;
     }
 }
 

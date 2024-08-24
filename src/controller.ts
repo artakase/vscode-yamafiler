@@ -46,7 +46,7 @@ export class Controller {
             const uri = getTabUri(tab);
             if (uri?.scheme === YAMAFILER_SCHEME) {
                 closedTabNames.add(uri.path);
-            } else if (uri?.path === this.batch?.doc.uri.path) {
+            } else if (uri?.path && this.batch && path.relative(uri.path, this.batch.doc.uri.path) === '') {
                 this.batch = undefined;
             }
         });
@@ -109,8 +109,7 @@ export class Controller {
     }: { path?: string; column?: 'active' | 'beside'; ask?: 'never' | 'dialog' } = {}): Promise<void> {
         const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri;
         const activeUri = getTabUri(vscode.window.tabGroups.activeTabGroup.activeTab);
-        const homeUri =
-            process.platform === 'win32' ? Uri.joinPath(Uri.file(os.homedir()), '.') : Uri.file(os.homedir());
+        const homeUri = Uri.file(os.homedir());
 
         let uri: Uri;
         if (ask === 'dialog') {
@@ -576,8 +575,8 @@ export class Controller {
             return;
         }
         this.tmpDirUri ??= Uri.file(fs.mkdtempSync(path.join(os.tmpdir(), 'yamafiler-')));
-        const originalFileUri = vscode.Uri.joinPath(this.tmpDirUri, '.Original.yamafiler-batch');
-        const batchFileUri = vscode.Uri.joinPath(this.tmpDirUri, '.FileNames.yamafiler-batch');
+        const originalFileUri = Uri.joinPath(this.tmpDirUri, '.Original.yamafiler-batch');
+        const batchFileUri = Uri.joinPath(this.tmpDirUri, '.FileNames.yamafiler-batch');
         if (mode === 'create') {
             await vscode.workspace.fs.writeFile(batchFileUri, new Uint8Array());
         } else {
@@ -726,11 +725,11 @@ export class Controller {
         }
         const at = vscode.window.tabGroups.activeTabGroup.activeTab;
         console.log(getTabUri(at));
-        if (
-            (at?.input instanceof vscode.TabInputText || at?.input instanceof vscode.TabInputTextDiff) &&
-            getTabUri(at)?.path === batch.doc.uri.path
-        ) {
-            void vscode.window.tabGroups.close(at);
+        if (at?.input instanceof vscode.TabInputText || at?.input instanceof vscode.TabInputTextDiff) {
+            const tabPath = getTabUri(at)?.path;
+            if (tabPath && path.relative(tabPath, batch.doc.uri.path) === '') {
+                void vscode.window.tabGroups.close(at);
+            }
         }
         this.batch = undefined;
     }
