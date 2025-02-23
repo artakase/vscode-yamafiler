@@ -178,7 +178,7 @@ export class Controller {
                 nocase: true,
             })
         ) {
-            vscode.env.openExternal(cursored.uri).then(undefined, (reason) => {
+            vscode.env.openExternal(cursored.uri).then(undefined, (reason: unknown) => {
                 void vscode.window.showErrorMessage(
                     vscode.l10n.t('Could not open {0}: {1}', cursored.uri.path, getMessage(reason))
                 );
@@ -196,7 +196,7 @@ export class Controller {
         } else if (
             minimatch(cursored.uri.path, externalPattern, { matchBase: true, dot: true, noext: true, nocase: true })
         ) {
-            vscode.env.openExternal(cursored.uri).then(undefined, (reason) => {
+            vscode.env.openExternal(cursored.uri).then(undefined, (reason: unknown) => {
                 void vscode.window.showErrorMessage(
                     vscode.l10n.t('Could not open {0}: {1}', cursored.uri.path, getMessage(reason))
                 );
@@ -208,7 +208,7 @@ export class Controller {
                     preserveFocus: preserveFocus,
                     preview: preview,
                 })
-                .then(undefined, (reason) => {
+                .then(undefined, (reason: unknown) => {
                     void vscode.window.showErrorMessage(
                         vscode.l10n.t('Could not open {0}: {1}', cursored.uri.path, getMessage(reason))
                     );
