@@ -148,6 +148,7 @@
     },
     "configurationDefaults": {
       "[yamafiler]": {
+        "editor.folding": false,
         "editor.stickyScroll.maxLineCount": 1
       }
     },
