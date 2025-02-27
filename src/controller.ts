@@ -417,10 +417,14 @@ export class Controller {
         }
         const results = await Promise.all(promises);
         const existUris: Uri[] = [];
+        let containsDirectory = false;
         for (const [index, result] of results.entries()) {
             if (result.error) {
                 if (result.error instanceof vscode.FileSystemError && result.error.code === 'FileExists') {
                     existUris.push(this.clipboard.files[index].uri);
+                    if (this.clipboard.files[index].isDirectory) {
+                        containsDirectory = true;
+                    }
                 } else {
                     console.error(result.error);
                 }
@@ -433,7 +437,7 @@ export class Controller {
         if (this.clipboard.mode === 'rename') {
             choices.push(overwriteAll, skip);
         } else if (this.clipboard.mode === 'copy') {
-            if (process.platform === 'win32') {
+            if (process.platform === 'win32' || !containsDirectory) {
                 choices.push(overwriteAll, skip);
             } else {
                 choices.push(overwriteAll, mergeOverwrite, skip);
