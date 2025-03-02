@@ -15,6 +15,7 @@
   "Failed to delete {0}: {1}": "Failed to delete {0}: {1}",
   "Could not link {0} to {1}: {2}": "Could not link {0} to {1}: {2}",
   "Could not open {0}: {1}": "Could not open {0}: {1}",
+  "Could not resolve {0}: {1}": "Could not resolve {0}: {1}",
   "Failed to add to workspace.": "Failed to add to workspace.",
   "Folder name": "Folder name",
   "File name": "File name",

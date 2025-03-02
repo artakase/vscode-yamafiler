@@ -15,6 +15,7 @@
   "Failed to delete {0}: {1}": "{0} の削除に失敗しました: {1}",
   "Could not link {0} to {1}: {2}": "{0} を {1} にリンクできません: {2}",
   "Could not open {0}: {1}": "{0}を開けませんでした: {1}",
+  "Could not resolve {0}: {1}": "{0} を解決できません: {1}",
   "Failed to add to workspace.": "ワークスペースに追加できませんでした。",
   "Folder name": "フォルダー名",
   "File name": "ファイル名",

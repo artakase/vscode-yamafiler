@@ -106,12 +106,18 @@ export class Controller {
         path = '',
         column = 'active',
         ask = 'never',
-    }: { path?: string; column?: 'active' | 'beside'; ask?: 'never' | 'dialog' } = {}): Promise<void> {
+        resolveSymlinks = false,
+    }: {
+        path?: string;
+        column?: 'active' | 'beside';
+        ask?: 'never' | 'dialog';
+        resolveSymlinks?: boolean;
+    } = {}): Promise<void> {
         const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri;
         const activeUri = getTabUri(vscode.window.tabGroups.activeTabGroup.activeTab);
         const homeUri = Uri.file(os.homedir());
 
-        let uri: Uri;
+        let uriToOpen: Uri;
         if (ask === 'dialog') {
             const uris = await vscode.window.showOpenDialog({
                 canSelectFiles: false,
@@ -121,32 +127,53 @@ export class Controller {
             if (uris?.length !== 1) {
                 return;
             }
-            uri = uris[0];
+            uriToOpen = uris[0];
         } else if (path === '~') {
-            uri = homeUri;
+            uriToOpen = homeUri;
         } else if (path.startsWith('~/')) {
-            uri = Uri.joinPath(homeUri, path.substring(2));
+            uriToOpen = Uri.joinPath(homeUri, path.substring(2));
         } else if (path === '${workspaceFolder}' && workspaceUri) {
-            uri = workspaceUri;
+            uriToOpen = workspaceUri;
         } else if (path.startsWith('${workspaceFolder}/') && workspaceUri) {
-            uri = Uri.joinPath(workspaceUri, path.substring(19));
+            uriToOpen = Uri.joinPath(workspaceUri, path.substring(19));
         } else if (path !== '' && !path.startsWith('${workspaceFolder}')) {
-            uri = Uri.file(path);
+            uriToOpen = Uri.file(path);
         } else if (activeUri?.scheme === YAMAFILER_SCHEME) {
             if (column === 'active') {
                 this.refresh();
                 return;
             } else {
-                uri = activeUri;
+                uriToOpen = activeUri;
             }
         } else if (activeUri?.scheme === 'file') {
-            uri = Uri.joinPath(activeUri, '..');
+            let activeFile = activeUri;
+            if (resolveSymlinks) {
+                try {
+                    activeFile = Uri.file(fs.realpathSync(activeFile.path));
+                } catch (e) {
+                    vscode.window.showErrorMessage(
+                        vscode.l10n.t('Could not resolve {0}: {1}', activeFile.path, getMessage(e))
+                    );
+                    return;
+                }
+            }
+            uriToOpen = Uri.joinPath(activeFile, '..');
         } else if (workspaceUri) {
-            uri = workspaceUri;
+            uriToOpen = workspaceUri;
         } else {
-            uri = homeUri;
+            uriToOpen = homeUri;
         }
-        await this.showFiler(uri, column);
+        if (resolveSymlinks) {
+            try {
+                uriToOpen = Uri.file(fs.realpathSync(uriToOpen.path));
+            } catch (e) {
+                vscode.window.showErrorMessage(
+                    vscode.l10n.t('Could not resolve {0}: {1}', uriToOpen.path, getMessage(e))
+                );
+                return;
+            }
+        }
+        await this.showFiler(uriToOpen, column);
     }
 
     enter({
@@ -156,6 +183,7 @@ export class Controller {
         binaryPattern = '',
         externalPattern = '',
         externalFolderPattern = '',
+        resolveSymlinks = false,
     }: {
         column?: 'active' | 'beside';
         preserveFocus?: boolean;
@@ -163,54 +191,66 @@ export class Controller {
         binaryPattern?: string;
         externalPattern?: string;
         externalFolderPattern?: string;
+        resolveSymlinks?: boolean;
     } = {}): void {
         const selection = this.getSelection();
         const cursored = selection?.cursored;
         if (!cursored) {
             return;
         }
+        let uriToOpen = cursored.uri;
+        if (resolveSymlinks) {
+            try {
+                uriToOpen = Uri.file(fs.realpathSync(uriToOpen.path));
+            } catch (e) {
+                vscode.window.showErrorMessage(
+                    vscode.l10n.t('Could not resolve {0}: {1}', uriToOpen.path, getMessage(e))
+                );
+                return;
+            }
+        }
         if (
             cursored.isDirectory &&
-            minimatch(cursored.uri.path, externalFolderPattern, {
+            minimatch(uriToOpen.path, externalFolderPattern, {
                 matchBase: true,
                 dot: true,
                 noext: true,
                 nocase: true,
             })
         ) {
-            vscode.env.openExternal(cursored.uri).then(undefined, (reason: unknown) => {
+            vscode.env.openExternal(uriToOpen).then(undefined, (reason: unknown) => {
                 void vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not open {0}: {1}', cursored.uri.path, getMessage(reason))
+                    vscode.l10n.t('Could not open {0}: {1}', uriToOpen.path, getMessage(reason))
                 );
             });
         } else if (cursored.isDirectory) {
-            void this.showFiler(cursored.uri, 'active');
+            void this.showFiler(uriToOpen, 'active');
         } else if (
-            minimatch(cursored.uri.path, binaryPattern, { matchBase: true, dot: true, noext: true, nocase: true })
+            minimatch(uriToOpen.path, binaryPattern, { matchBase: true, dot: true, noext: true, nocase: true })
         ) {
-            void vscode.commands.executeCommand('vscode.open', cursored.uri, {
+            void vscode.commands.executeCommand('vscode.open', uriToOpen, {
                 viewColumn: column === 'active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
                 preserveFocus: preserveFocus,
                 prevew: preview,
             });
         } else if (
-            minimatch(cursored.uri.path, externalPattern, { matchBase: true, dot: true, noext: true, nocase: true })
+            minimatch(uriToOpen.path, externalPattern, { matchBase: true, dot: true, noext: true, nocase: true })
         ) {
-            vscode.env.openExternal(cursored.uri).then(undefined, (reason: unknown) => {
+            vscode.env.openExternal(uriToOpen).then(undefined, (reason: unknown) => {
                 void vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not open {0}: {1}', cursored.uri.path, getMessage(reason))
+                    vscode.l10n.t('Could not open {0}: {1}', uriToOpen.path, getMessage(reason))
                 );
             });
         } else {
             vscode.window
-                .showTextDocument(cursored.uri, {
+                .showTextDocument(uriToOpen, {
                     viewColumn: column === 'active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
                     preserveFocus: preserveFocus,
                     preview: preview,
                 })
                 .then(undefined, (reason: unknown) => {
                     void vscode.window.showErrorMessage(
-                        vscode.l10n.t('Could not open {0}: {1}', cursored.uri.path, getMessage(reason))
+                        vscode.l10n.t('Could not open {0}: {1}', uriToOpen.path, getMessage(reason))
                     );
                 });
         }
@@ -230,29 +270,57 @@ export class Controller {
         }
     }
 
-    openWorkspace({ forceNewWindow = false }: { forceNewWindow?: boolean } = {}): void {
+    openWorkspace({
+        forceNewWindow = false,
+        resolveSymlinks = false,
+    }: { forceNewWindow?: boolean; resolveSymlinks?: boolean } = {}): void {
         const cursored = this.getSelection()?.cursored;
         if (!cursored) {
             return;
         }
+        let uriToOpen = cursored.uri;
+        if (resolveSymlinks) {
+            try {
+                uriToOpen = Uri.file(fs.realpathSync(uriToOpen.path));
+            } catch (e) {
+                vscode.window.showErrorMessage(
+                    vscode.l10n.t('Could not resolve {0}: {1}', uriToOpen.path, getMessage(e))
+                );
+            }
+        }
         if (
             !cursored.isDirectory &&
-            !minimatch(cursored.uri.path, '*.code-workspace', { matchBase: true, dot: true, noext: true })
+            !minimatch(uriToOpen.path, '*.code-workspace', { matchBase: true, dot: true, noext: true })
         ) {
             return;
         }
-        void vscode.commands.executeCommand('vscode.openFolder', cursored.uri, { forceNewWindow });
+        void vscode.commands.executeCommand('vscode.openFolder', uriToOpen, { forceNewWindow });
     }
 
-    addToWorkspace(): void {
+    addToWorkspace({ resolveSymlinks = false }: { resolveSymlinks?: boolean } = {}): void {
         const files = this.getSelection()?.files;
         if (!files || files.length === 0) {
             return;
         }
+        let uris: { uri: Uri }[];
+        if (resolveSymlinks) {
+            uris = [];
+            for (const file of files) {
+                try {
+                    uris.push({ uri: Uri.file(fs.realpathSync(file.uri.path)) });
+                } catch (e) {
+                    vscode.window.showErrorMessage(
+                        vscode.l10n.t('Could not resolve {0}: {1}', file.uri.path, getMessage(e))
+                    );
+                }
+            }
+        } else {
+            uris = files.map((file) => ({ uri: file.uri }));
+        }
         const success = vscode.workspace.updateWorkspaceFolders(
             vscode.workspace.workspaceFolders?.length ?? 0,
             undefined,
-            ...files.map((file) => ({ uri: file.uri }))
+            ...uris
         );
         if (!success) {
             void vscode.window.showErrorMessage(vscode.l10n.t('Failed to add to workspace.'));
