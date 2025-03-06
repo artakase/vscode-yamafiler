@@ -60,7 +60,7 @@ export class YamafilerProvider implements vscode.TextDocumentContentProvider {
             void vscode.window.showErrorMessage(
                 vscode.l10n.t('Could not read {0}: {1}', uri.fsPath, getMessage(error))
             );
-            return undefined;
+            return '';
         }
         const header = `${tildify(uri.fsPath)}:`;
         const setSelection = new Set(folder.selectedIndexes);

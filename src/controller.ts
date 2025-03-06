@@ -81,6 +81,10 @@ export class Controller {
         const yamafilerUri = uri.with({ scheme: YAMAFILER_SCHEME });
         this.filerToOpen = uri;
         const doc = await vscode.workspace.openTextDocument(yamafilerUri);
+        if (doc.lineAt(0).isEmptyOrWhitespace) {
+            this.filerToOpen = undefined;
+            return;
+        }
         if (doc.languageId === YAMAFILER_LANGUAGE_ID) {
             this.provider.emitChange(yamafilerUri);
         } else {
