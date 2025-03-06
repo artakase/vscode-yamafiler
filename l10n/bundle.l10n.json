@@ -33,6 +33,7 @@
   "Overwrite (Merge Folders)": "Overwrite (Merge Folders)",
   "Skip": "Skip",
   "File already exists. Overwrite?": "File already exists. Overwrite?",
+  "The cache has been deleted. Please refresh the filer.": "The cache has been deleted. Please refresh the filer.",
   "Batch already exists. Please save or cancel it first.": "Batch already exists. Please save or cancel it first.",
   "Input file names. For folder names, add \"/\" (e.g. \"foldername/\"). Save the tab manually to execute. Close the tab to cancel.": "Input file names. For folder names, add \"/\" (e.g. \"foldername/\"). Save the tab manually to execute. Close the tab to cancel.",
   "Edit file names. Save this tab manually to execute. Close this tab to cancel.": "Edit file names. Save this tab manually to execute. Close this tab to cancel.",

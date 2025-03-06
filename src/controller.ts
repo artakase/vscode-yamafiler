@@ -614,6 +614,7 @@ export class Controller {
         const uri = filerUri.with({ scheme: 'file' });
         const folder = this.provider.cachedFolders.get(uri.fsPath);
         if (!folder) {
+            void vscode.window.showErrorMessage(vscode.l10n.t('The cache has been deleted. Please refresh the filer.'));
             return undefined;
         }
         const selectedIndexes = folder.selectedIndexes;
