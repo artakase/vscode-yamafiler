@@ -35,32 +35,32 @@ async function resolveResult<T>(
 
 export function createDirectory(uri: Uri): Promise<Result> {
     function messageFunc(errorMessage: string) {
-        return vscode.l10n.t('Could not create {0}: {1}', uri.path, errorMessage);
+        return vscode.l10n.t('Could not create {0}: {1}', uri.fsPath, errorMessage);
     }
     return resolveResult(vscode.workspace.fs.createDirectory(uri), messageFunc);
 }
 
 export function createFile(uri: Uri): Promise<Result> {
     function messageFunc(errorMessage: string) {
-        return vscode.l10n.t('Could not create {0}: {1}', uri.path, errorMessage);
+        return vscode.l10n.t('Could not create {0}: {1}', uri.fsPath, errorMessage);
     }
     return resolveResult(vscode.workspace.fs.writeFile(uri, new Uint8Array()), messageFunc);
 }
 
 export function rename(oldUri: Uri, newUri: Uri, options?: { overwrite?: boolean }): Promise<Result> {
     function messageFunc(errorMessage: string) {
-        return vscode.l10n.t('Could not rename {0} to {1}: {2}', oldUri.path, newUri.path, errorMessage);
+        return vscode.l10n.t('Could not rename {0} to {1}: {2}', oldUri.fsPath, newUri.fsPath, errorMessage);
     }
     return resolveResult(vscode.workspace.fs.rename(oldUri, newUri, { overwrite: options?.overwrite }), messageFunc);
 }
 
 export function copy(oldUri: Uri, newUri: Uri, options?: { overwrite?: boolean; merge?: boolean }): Promise<Result> {
     function messageFunc(errorMessage: string) {
-        return vscode.l10n.t('Could not copy {0} to {1}: {2}', oldUri.path, newUri.path, errorMessage);
+        return vscode.l10n.t('Could not copy {0} to {1}: {2}', oldUri.fsPath, newUri.fsPath, errorMessage);
     }
     if (options?.merge) {
         return resolveResult(
-            fsPromises.cp(oldUri.path, newUri.path, {
+            fsPromises.cp(oldUri.fsPath, newUri.fsPath, {
                 recursive: true,
                 force: options.overwrite,
                 errorOnExist: true,
@@ -74,7 +74,7 @@ export function copy(oldUri: Uri, newUri: Uri, options?: { overwrite?: boolean; 
 
 function _delete(uri: Uri, options?: { recursive?: boolean; useTrash?: boolean }): Promise<Result> {
     function messageFunc(errorMessage: string) {
-        return vscode.l10n.t('Failed to delete {0}: {1}', uri.path, errorMessage);
+        return vscode.l10n.t('Failed to delete {0}: {1}', uri.fsPath, errorMessage);
     }
     return resolveResult(vscode.workspace.fs.delete(uri, options), messageFunc);
 }
@@ -83,7 +83,7 @@ export { _delete as delete };
 
 export function symlink(targetUri: Uri, linkUri: Uri): Promise<Result> {
     function messageFunc(errorMessage: string) {
-        return vscode.l10n.t('Could not link {0} to {1}: {2}', linkUri.path, targetUri.path, errorMessage);
+        return vscode.l10n.t('Could not link {0} to {1}: {2}', linkUri.fsPath, targetUri.fsPath, errorMessage);
     }
-    return resolveResult(fsPromises.symlink(targetUri.path, linkUri.path), messageFunc);
+    return resolveResult(fsPromises.symlink(targetUri.fsPath, linkUri.fsPath), messageFunc);
 }

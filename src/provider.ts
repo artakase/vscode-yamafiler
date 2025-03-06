@@ -38,7 +38,7 @@ function tildify(p: string): string {
     } else if (relPath.startsWith('..')) {
         return p;
     } else {
-        return `~${Uri.file(relPath).path}`;
+        return `~${Uri.file(relPath).fsPath}`;
     }
 }
 
@@ -57,16 +57,18 @@ export class YamafilerProvider implements vscode.TextDocumentContentProvider {
             folder = await this.readFolder(uri.with({ scheme: 'file' }));
         } catch (error) {
             console.error(error);
-            void vscode.window.showErrorMessage(vscode.l10n.t('Could not read {0}: {1}', uri.path, getMessage(error)));
+            void vscode.window.showErrorMessage(
+                vscode.l10n.t('Could not read {0}: {1}', uri.fsPath, getMessage(error))
+            );
             return undefined;
         }
-        const header = `${tildify(uri.path)}:`;
+        const header = `${tildify(uri.fsPath)}:`;
         const setSelection = new Set(folder.selectedIndexes);
         return [header].concat(folder.files.map((file, index) => makeLine(file, setSelection.has(index)))).join('\n');
     }
 
     private async readFolder(uri: Uri): Promise<FolderData> {
-        const cachedFolder = this.cachedFolders.get(uri.path);
+        const cachedFolder = this.cachedFolders.get(uri.fsPath);
         if (cachedFolder?.shouldRefresh === false) {
             return cachedFolder;
         }
@@ -89,21 +91,21 @@ export class YamafilerProvider implements vscode.TextDocumentContentProvider {
         const selectedIndexes: number[] = [];
         if (cachedFolder) {
             const selectedFileNames = new Set(
-                cachedFolder.selectedIndexes.map((index) => cachedFolder.files[index].uri.path)
+                cachedFolder.selectedIndexes.map((index) => cachedFolder.files[index].uri.fsPath)
             );
             files.forEach((file, index) => {
-                if (selectedFileNames.has(file.uri.path)) {
+                if (selectedFileNames.has(file.uri.fsPath)) {
                     selectedIndexes.push(index);
                 }
             });
         }
         const resultFolder = { uri, files, selectedIndexes, shouldRefresh: false };
-        this.cachedFolders.set(uri.path, resultFolder);
+        this.cachedFolders.set(uri.fsPath, resultFolder);
         return resultFolder;
     }
 
     emitChange(uri: Uri, resetSelection = false): void {
-        const cachedFolder = this.cachedFolders.get(uri.path);
+        const cachedFolder = this.cachedFolders.get(uri.fsPath);
         if (cachedFolder) {
             cachedFolder.shouldRefresh = true;
             if (resetSelection) {

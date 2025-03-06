@@ -45,8 +45,8 @@ export class Controller {
         event.closed.forEach((tab) => {
             const uri = getTabUri(tab);
             if (uri?.scheme === YAMAFILER_SCHEME) {
-                closedTabNames.add(uri.path);
-            } else if (uri?.path && this.batch && path.relative(uri.path, this.batch.doc.uri.path) === '') {
+                closedTabNames.add(uri.fsPath);
+            } else if (uri?.fsPath && this.batch && path.relative(uri.fsPath, this.batch.doc.uri.fsPath) === '') {
                 this.batch = undefined;
             }
         });
@@ -58,15 +58,15 @@ export class Controller {
             tabGroup.tabs.forEach((tab) => {
                 const uri = getTabUri(tab);
                 if (uri?.scheme === YAMAFILER_SCHEME) {
-                    allTabNames.add(uri.path);
+                    allTabNames.add(uri.fsPath);
                 }
             });
         });
         if (this.filerToOpen) {
-            allTabNames.add(this.filerToOpen.path);
+            allTabNames.add(this.filerToOpen.fsPath);
         }
         if (this.batch) {
-            if (!allTabNames.has(this.batch.doc.uri.path)) {
+            if (!allTabNames.has(this.batch.doc.uri.fsPath)) {
                 this.batch = undefined;
             }
         }
@@ -96,7 +96,7 @@ export class Controller {
                 selection,
             })
             .then(undefined, (reason: unknown) =>
-                vscode.window.showErrorMessage(vscode.l10n.t('Could not open {0}: {1}', uri.path, getMessage(reason)))
+                vscode.window.showErrorMessage(vscode.l10n.t('Could not open {0}: {1}', uri.fsPath, getMessage(reason)))
             );
 
         this.filerToOpen = undefined;
@@ -149,10 +149,10 @@ export class Controller {
             let activeFile = activeUri;
             if (resolveSymlinks) {
                 try {
-                    activeFile = Uri.file(fs.realpathSync(activeFile.path));
+                    activeFile = Uri.file(fs.realpathSync.native(activeFile.fsPath));
                 } catch (e) {
                     vscode.window.showErrorMessage(
-                        vscode.l10n.t('Could not resolve {0}: {1}', activeFile.path, getMessage(e))
+                        vscode.l10n.t('Could not resolve {0}: {1}', activeFile.fsPath, getMessage(e))
                     );
                     return;
                 }
@@ -165,10 +165,10 @@ export class Controller {
         }
         if (resolveSymlinks) {
             try {
-                uriToOpen = Uri.file(fs.realpathSync(uriToOpen.path));
+                uriToOpen = Uri.file(fs.realpathSync.native(uriToOpen.fsPath));
             } catch (e) {
                 vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not resolve {0}: {1}', uriToOpen.path, getMessage(e))
+                    vscode.l10n.t('Could not resolve {0}: {1}', uriToOpen.fsPath, getMessage(e))
                 );
                 return;
             }
@@ -201,10 +201,10 @@ export class Controller {
         let uriToOpen = cursored.uri;
         if (resolveSymlinks) {
             try {
-                uriToOpen = Uri.file(fs.realpathSync(uriToOpen.path));
+                uriToOpen = Uri.file(fs.realpathSync.native(uriToOpen.fsPath));
             } catch (e) {
                 vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not resolve {0}: {1}', uriToOpen.path, getMessage(e))
+                    vscode.l10n.t('Could not resolve {0}: {1}', uriToOpen.fsPath, getMessage(e))
                 );
                 return;
             }
@@ -220,7 +220,7 @@ export class Controller {
         ) {
             vscode.env.openExternal(uriToOpen).then(undefined, (reason: unknown) => {
                 void vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not open {0}: {1}', uriToOpen.path, getMessage(reason))
+                    vscode.l10n.t('Could not open {0}: {1}', uriToOpen.fsPath, getMessage(reason))
                 );
             });
         } else if (cursored.isDirectory) {
@@ -238,7 +238,7 @@ export class Controller {
         ) {
             vscode.env.openExternal(uriToOpen).then(undefined, (reason: unknown) => {
                 void vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not open {0}: {1}', uriToOpen.path, getMessage(reason))
+                    vscode.l10n.t('Could not open {0}: {1}', uriToOpen.fsPath, getMessage(reason))
                 );
             });
         } else {
@@ -250,7 +250,7 @@ export class Controller {
                 })
                 .then(undefined, (reason: unknown) => {
                     void vscode.window.showErrorMessage(
-                        vscode.l10n.t('Could not open {0}: {1}', uriToOpen.path, getMessage(reason))
+                        vscode.l10n.t('Could not open {0}: {1}', uriToOpen.fsPath, getMessage(reason))
                     );
                 });
         }
@@ -259,7 +259,7 @@ export class Controller {
     goToParent(): void {
         const uri = vscode.window.activeTextEditor?.document.uri;
         if (uri?.scheme === YAMAFILER_SCHEME) {
-            void this.showFiler(Uri.joinPath(uri, '..'), 'active');
+            void this.showFiler(Uri.file(path.join(uri.fsPath, '..')), 'active');
         }
     }
 
@@ -281,10 +281,10 @@ export class Controller {
         let uriToOpen = cursored.uri;
         if (resolveSymlinks) {
             try {
-                uriToOpen = Uri.file(fs.realpathSync(uriToOpen.path));
+                uriToOpen = Uri.file(fs.realpathSync.native(uriToOpen.fsPath));
             } catch (e) {
                 vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not resolve {0}: {1}', uriToOpen.path, getMessage(e))
+                    vscode.l10n.t('Could not resolve {0}: {1}', uriToOpen.fsPath, getMessage(e))
                 );
             }
         }
@@ -307,10 +307,10 @@ export class Controller {
             uris = [];
             for (const file of files) {
                 try {
-                    uris.push({ uri: Uri.file(fs.realpathSync(file.uri.path)) });
+                    uris.push({ uri: Uri.file(fs.realpathSync.native(file.uri.fsPath)) });
                 } catch (e) {
                     vscode.window.showErrorMessage(
-                        vscode.l10n.t('Could not resolve {0}: {1}', file.uri.path, getMessage(e))
+                        vscode.l10n.t('Could not resolve {0}: {1}', file.uri.fsPath, getMessage(e))
                     );
                 }
             }
@@ -406,7 +406,7 @@ export class Controller {
         if (!selection || selection.files.length == 0) {
             return;
         }
-        const pathList = selection.files.map((file) => file.uri.path).join('\n');
+        const pathList = selection.files.map((file) => file.uri.fsPath).join('\n');
         const choiceDelete = vscode.l10n.t('Delete');
         const answer = await vscode.window.showWarningMessage(
             vscode.l10n.t('Delete this file?'),
@@ -446,7 +446,7 @@ export class Controller {
         if (!selection || selection.files.length == 0) {
             return;
         }
-        const pathList = selection.files.map((file) => file.uri.path).join('\n');
+        const pathList = selection.files.map((file) => file.uri.fsPath).join('\n');
         this.clipboard = { mode, uri: selection.uri, files: selection.files };
         if (mode === 'rename') {
             void vscode.window.showInformationMessage(vscode.l10n.t('{0} has been cut.', pathList));
@@ -473,7 +473,7 @@ export class Controller {
         const promises: Promise<edition.Result>[] = [];
         for (const file of this.clipboard.files) {
             const oldUri = file.uri;
-            const relPath = path.relative(this.clipboard.uri.path, oldUri.path);
+            const relPath = path.relative(this.clipboard.uri.fsPath, oldUri.fsPath);
             const newUri = Uri.joinPath(selection.uri, relPath);
             if (this.clipboard.mode === 'rename') {
                 promises.push(edition.rename(oldUri, newUri, { overwrite: false }));
@@ -612,7 +612,7 @@ export class Controller {
             return undefined;
         }
         const uri = filerUri.with({ scheme: 'file' });
-        const folder = this.provider.cachedFolders.get(uri.path);
+        const folder = this.provider.cachedFolders.get(uri.fsPath);
         if (!folder) {
             return undefined;
         }
@@ -796,10 +796,9 @@ export class Controller {
             return;
         }
         const at = vscode.window.tabGroups.activeTabGroup.activeTab;
-        console.log(getTabUri(at));
         if (at?.input instanceof vscode.TabInputText || at?.input instanceof vscode.TabInputTextDiff) {
-            const tabPath = getTabUri(at)?.path;
-            if (tabPath && path.relative(tabPath, batch.doc.uri.path) === '') {
+            const tabPath = getTabUri(at)?.fsPath;
+            if (tabPath && path.relative(tabPath, batch.doc.uri.fsPath) === '') {
                 void vscode.window.tabGroups.close(at);
             }
         }
