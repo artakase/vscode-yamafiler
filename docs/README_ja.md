@@ -4,6 +4,10 @@ Yamafiler は VS Code 用のテキストベースのファイルマネージャ�
 
 ![demo](https://raw.githubusercontent.com/artakase/vscode-yamafiler/main/images/demo.gif)
 
+"Yama" は日本語で "山" という意味です。
+
+[英語 README](../README.md)
+
 ## 設定
 
 -   `yamafiler.useRecommendedKeybindings` - 以下に示す推奨のキーバインドを使用します。
@@ -30,11 +34,11 @@ Yamafiler は VS Code 用のテキストベースのファイルマネージャ�
 | `Shift` `M`                                          | 新しい複数のフォルダーとファイル                            |
 | `R`                                                  | リネーム                                                    |
 | `C`                                                  | 同じフォルダーに複製                                        |
-| `Shift` `S`                                          | 同じフォルダーにシンボリックリンクを作成（Linux, MacOS）    |
+| `Shift` `S`                                          | 同じフォルダーにシンボリックリンクを作成                    |
 | `D`                                                  | ごみ箱に移動                                                |
 | `M`                                                  | 移動                                                        |
 | `Y`                                                  | コピー                                                      |
-| `Shift` `T`                                          | シンボリックリンクのターゲットに指定（Linux, MacOS）        |
+| `Shift` `T`                                          | シンボリックリンクのターゲットに指定                        |
 | `P`                                                  | ペースト                                                    |
 
 キーが他の拡張機能と衝突する場合は手動で調整してください。
@@ -52,6 +56,7 @@ Yamafiler は VS Code 用のテキストベースのファイルマネージャ�
     -   _path_ - フォルダーのパスです。'~' にするとホームフォルダーを開きます。'${workspaceFolder}' にするとワークスペースフォルダーを開きます。
     -   _column_ = 'active' - ファイラーを開くカラムです。'active' または 'beside' です。
     -   _ask_ = 'never' - ファイラーで表示するフォルダーを尋ねるかどうかを選択します。デフォルトでは現在のファイルの親フォルダーを表示します。'dialog' にするとフォルダー選択ダイアログを表示します。
+    -   _resolveSymlinks_ = false - シンボリックリンクを解決するかを指定します。
 
 -   `yamafiler.enter` - カーソル行の子フォルダーまたはファイルを開きます。
 
@@ -61,13 +66,16 @@ Yamafiler は VS Code 用のテキストベースのファイルマネージャ�
     -   _binaryPattern_ = '' - バイナリとして開くファイルの名前のパターンです。
     -   _externalPattern_ = '' - 外部アプリケーションで開くファイルの名前のパターンです。
     -   _externalFolderPattern_ = '' - 外部アプリケーションで開くフォルダーの名前のパターンです。
+    -   _resolveSymlinks_ = false - シンボリックリンクを解決するかを指定します。
 
 -   `yamafiler.goToParent` - 現在表示しているフォルダーの親フォルダーを開きます。
 -   `yamafiler.refresh` - フォルダーの内容を更新します。
     -   _resetSelection_ = false - 選択を破棄するかを指定します。
 -   `yamafiler.openWorkspace` - カーソル上のワークスペースを開きます。ワークスペースはワークスペース設定ファイルまたはフォルダーです。
     -   _forceNewWindow_ = false - ワークスペースを新しいウィンドウで開くかを選択します。
+    -   _resolveSymlinks_ = false - シンボリックリンクを解決するかを指定します。
 -   `yamafiler.addToWorkspace` - 選択されているフォルダーをワークスペースに追加します。
+    -   _resolveSymlinks_ = false - シンボリックリンクを解決するかを指定します。
 
 ### ファイル操作
 
@@ -76,14 +84,14 @@ Yamafiler は VS Code 用のテキストベースのファイルマネージャ�
 -   `yamafiler.newMultipleFiles` - バッチを使用して新しいフォルダーとファイルを作成します。
 -   `yamafiler.rename` - 選択されているフォルダーまたはファイルの名前を変更します。複数選択時はバッチを使用します。
 -   `yamafiler.duplicate` - 選択されているフォルダーまたはファイルを入力した名前で現在のフォルダーに複製します。複数選択時はバッチを使用します。
--   `yamafiler.symlink` - 選択されているフォルダーまたはファイルへのシンボリックリンクを作成します。複数選択時はバッチを使用します（Linux, MacOS）。
+-   `yamafiler.symlink` - 選択されているフォルダーまたはファイルへのシンボリックリンクを作成します。複数選択時はバッチを使用します。
 -   `yamafiler.delete` - 選択されているフォルダーまたはファイルを削除します。
 
 ### クリップボードを使用したファイル操作
 
 -   `yamafiler.cut` - 選択されているフォルダーまたはファイルをカットします。
 -   `yamafiler.copy` - 選択されているフォルダーまたはファイルのコピーを作成します。
--   `yamafiler.targetForSymlink` - 選択されているフォルダーまたはファイルをシンボリックリンクのターゲットとして指定します（Linux, MacOS）。
+-   `yamafiler.targetForSymlink` - 選択されているフォルダーまたはファイルをシンボリックリンクのターゲットとして指定します。
 -   `yamafiler.paste` - クリップボードのファイルをファイラーのフォルダーに貼り付けます。クリップボードに書き込んだフォルダーを開いているときには実行できません。
 
 ### ファイル選択
