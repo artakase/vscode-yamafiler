@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.2.0]
+
+-   Support `resolveSymlinks` parameter
+-   Support creating symlinks on Windows
+-   Show appropriate path on Windows
+-   Disable folding
+-   Don't show "Overwrite (Merge Folders)" choice when unnecessary
+
 ## [0.1.2]
 
 -   Support case insensitive patterns

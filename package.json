@@ -2,7 +2,7 @@
   "name": "yamafiler",
   "displayName": "Yamafiler",
   "description": "Text based file manager for VS Code",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "publisher": "artakase",
   "author": {
     "name": "TAKASE Arihiro"
@@ -375,6 +375,5 @@
     "mocha": "^11.1.0",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.26.0"
-  },
-  "preview": true
+  }
 }
