@@ -26,7 +26,6 @@ export class Controller {
     private readonly disposables: vscode.Disposable[] = [];
     readonly provider;
     private clipboard: Clipboard | undefined;
-    private filerToOpen: Uri | undefined;
     private batch: BatchDocument | undefined;
     private tmpDirUri: Uri | undefined;
 
@@ -65,9 +64,6 @@ export class Controller {
                 }
             });
         });
-        if (this.filerToOpen) {
-            allTabNames.add(this.filerToOpen.fsPath);
-        }
         if (this.batch) {
             if (!allTabNames.has(this.batch.doc.uri.fsPath)) {
                 this.batch = undefined;
@@ -82,10 +78,8 @@ export class Controller {
 
     private async showFiler(uri: Uri, column: 'active' | 'beside' = 'active'): Promise<void> {
         const yamafilerUri = uri.with({ scheme: YAMAFILER_SCHEME });
-        this.filerToOpen = uri;
         const doc = await vscode.workspace.openTextDocument(yamafilerUri);
         if (doc.lineAt(0).isEmptyOrWhitespace) {
-            this.filerToOpen = undefined;
             return;
         }
         if (doc.languageId === YAMAFILER_LANGUAGE_ID) {
@@ -105,8 +99,6 @@ export class Controller {
             .then(undefined, (reason: unknown) =>
                 vscode.window.showErrorMessage(vscode.l10n.t('Could not open {0}: {1}', uri.fsPath, getMessage(reason)))
             );
-
-        this.filerToOpen = undefined;
     }
 
     async openFiler({
