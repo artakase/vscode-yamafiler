@@ -2,22 +2,25 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as process from 'process';
+
 import { minimatch } from 'minimatch';
+
 import * as vscode from 'vscode';
 import { Uri } from 'vscode';
+
 import * as edition from './edition';
-import { makeValidator } from './validator';
 import { YamafilerProvider } from './provider';
 import {
     BatchDocument,
-    YAMAFILER_SCHEME,
-    YAMAFILER_LANGUAGE_ID,
-    FileItem,
-    Selection,
     Clipboard,
+    FileItem,
     getMessage,
     getTabUri,
+    Selection,
+    YAMAFILER_LANGUAGE_ID,
+    YAMAFILER_SCHEME,
 } from './utils';
+import { makeValidator } from './validator';
 
 export class Controller {
     private readonly disposables: vscode.Disposable[] = [];

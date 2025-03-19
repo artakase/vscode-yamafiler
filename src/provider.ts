@@ -1,8 +1,11 @@
 import * as os from 'os';
 import * as path from 'path';
-import * as vscode from 'vscode';
+
 import { filesize } from 'filesize';
+
+import * as vscode from 'vscode';
 import { Uri } from 'vscode';
+
 import { FileItem, FolderData, getMessage, YAMAFILER_SCHEME } from './utils';
 
 export function sortFunc(a: FileItem, b: FileItem): number {

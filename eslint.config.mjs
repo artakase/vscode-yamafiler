@@ -2,6 +2,7 @@
 
 import eslint from '@eslint/js';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import * as importPlugin from 'eslint-plugin-import';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config({
@@ -13,6 +14,7 @@ export default tseslint.config({
     ],
     plugins: {
         '@typescript-eslint': tseslint.plugin,
+        import: importPlugin,
     },
     languageOptions: {
         ecmaVersion: 2020,
@@ -26,6 +28,35 @@ export default tseslint.config({
     rules: {
         '@typescript-eslint/no-base-to-string': 'off',
         '@typescript-eslint/unbound-method': 'off',
+        'import/order': [
+            'error',
+            {
+                groups: ['builtin', 'external', 'internal', ['parent', 'sibling'], 'index'],
+                'newlines-between': 'always',
+                alphabetize: {
+                    order: 'asc',
+                    caseInsensitive: true,
+                },
+                pathGroups: [
+                    {
+                        pattern: 'vscode',
+                        group: 'internal',
+                        position: 'before',
+                    },
+                ],
+                pathGroupsExcludedImportTypes: ['vscode'],
+            },
+        ],
+        'import/no-duplicates': 'error',
+        'sort-imports': [
+            'error',
+            {
+                ignoreCase: true,
+                ignoreDeclarationSort: true,
+                ignoreMemberSort: false,
+                memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
+            },
+        ],
     },
     files: ['src/**/*.ts'],
     ignores: ['src/test/**/*.ts'],

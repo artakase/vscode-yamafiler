@@ -1,14 +1,14 @@
 import {
     FileStat,
-    TextEditor,
-    TextDocument,
-    Uri,
     Tab,
-    TabInputText,
     TabInputCustom,
     TabInputNotebook,
-    TabInputTextDiff,
     TabInputNotebookDiff,
+    TabInputText,
+    TabInputTextDiff,
+    TextDocument,
+    TextEditor,
+    Uri,
 } from 'vscode';
 
 export const YAMAFILER_SCHEME = 'yamafiler';

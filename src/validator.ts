@@ -7,6 +7,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import * as process from 'process';
+
 import * as vscode from 'vscode';
 
 // Reference: https://en.wikipedia.org/wiki/Filename
