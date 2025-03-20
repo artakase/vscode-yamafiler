@@ -1,70 +1,48 @@
 {
-    "name": "Yamafiler",
-    "scopeName": "source.yamafiler",
-    "patterns": [
+  "name": "Yamafiler",
+  "scopeName": "source.yamafiler",
+  "patterns": [
+    { "include": "#header" },
+    { "include": "#entryline" }
+  ],
+  "repository": {
+    "header": {
+      "name": "markup.heading.yamafiler",
+      "match": "\\A.*$"
+    },
+    "entryline": {
+      "patterns": [
         {
-            "include": "#header"
+          "comment": "Line of filer.",
+          "name": "meta.entryline.yamfiler",
+          "match": "^[* ] (.{9}) (.{11}) (.+/$)?",
+          "captures": {
+            "1": { "name": "variable.filesize.yamafiler" },
+            "2": { "name": "string.time.yamafiler" },
+            "3": { "name": "keyword.foldername.yamafiler" }
+          }
         },
         {
-            "include": "#entryline"
-        }
-    ],
-    "repository": {
-        "header": {
-            "name": "markup.heading.yamafiler",
-            "match": "\\A.*$"
+          "comment": "Line of symbolic link.",
+          "name": "meta.linkline.yamfiler",
+          "match": "^[* ]L(.{9}) (.{11}) (.+$)",
+          "captures": {
+            "1": { "name": "variable.filesize.yamafiler" },
+            "2": { "name": "string.time.yamafiler" },
+            "3": { "name": "variable.linkname.yamafiler" }
+          }
         },
-        "entryline": {
-            "patterns": [
-                {
-                    "comment": "Line of filer.",
-                    "name": "meta.entryline.yamfiler",
-                    "match": "^[* ] (.{9}) (.{11}) (.+/$)?",
-                    "captures": {
-                        "1": {
-                            "name": "variable.filesize.yamafiler"
-                        },
-                        "2": {
-                            "name": "string.time.yamafiler"
-                        },
-                        "3": {
-                            "name": "keyword.foldername.yamafiler"
-                        }
-                    }
-                },
-                {
-                    "comment": "Line of symbolic link.",
-                    "name": "meta.linkline.yamfiler",
-                    "match": "^[* ]L(.{9}) (.{11}) (.+$)",
-                    "captures": {
-                        "1": {
-                            "name": "variable.filesize.yamafiler"
-                        },
-                        "2": {
-                            "name": "string.time.yamafiler"
-                        },
-                        "3": {
-                            "name": "variable.linkname.yamafiler"
-                        }
-                    }
-                },
-                {
-                    "comment": "Line of broken symbolic link.",
-                    "name": "meta.brokenlink.yamfiler",
-                    "match": "^[* ]l(.{9}) (.{11}) (.+$)",
-                    "captures": {
-                        "1": {
-                            "name": "variable.filesize.yamafiler"
-                        },
-                        "2": {
-                            "name": "string.time.yamafiler"
-                        },
-                        "3": {
-                            "name": "invalid.brokenlink.yamafiler"
-                        }
-                    }
-                }
-            ]
+        {
+          "comment": "Line of broken symbolic link.",
+          "name": "meta.brokenlink.yamfiler",
+          "match": "^[* ]l(.{9}) (.{11}) (.+$)",
+          "captures": {
+            "1": { "name": "variable.filesize.yamafiler" },
+            "2": { "name": "string.time.yamafiler" },
+            "3": { "name": "invalid.brokenlink.yamafiler" }
+          }
         }
+      ]
     }
+  }
 }
