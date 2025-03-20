@@ -8,8 +8,8 @@ import { minimatch } from 'minimatch';
 import * as vscode from 'vscode';
 import { Uri } from 'vscode';
 
+import { YamafilerProvider } from './contentProvider';
 import * as edition from './edition';
-import { YamafilerProvider } from './provider';
 import {
     BatchDocument,
     Clipboard,
