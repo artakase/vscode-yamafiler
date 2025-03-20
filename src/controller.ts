@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import * as process from 'process';
 
 import { minimatch } from 'minimatch';
 
@@ -14,6 +13,7 @@ import {
     FileEntry,
     getErrorMessage,
     getUriFromTab,
+    IS_WINDOWS,
     NavigationContext,
     PendingFileOperation,
     YAMAFILER_LANGUAGE_ID,
@@ -512,7 +512,7 @@ export class Controller {
         if (this.pendingFileOperation.operationType === 'rename') {
             choices.push(overwriteAll, skip);
         } else if (this.pendingFileOperation.operationType === 'copy') {
-            if (process.platform === 'win32' || !containsDir) {
+            if (IS_WINDOWS || !containsDir) {
                 choices.push(overwriteAll, skip);
             } else {
                 choices.push(overwriteAll, mergeOverwrite, skip);

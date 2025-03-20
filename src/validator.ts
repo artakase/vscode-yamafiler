@@ -6,9 +6,9 @@
  *  Modified by TAKASE Arihiro.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import * as process from 'process';
-
 import * as vscode from 'vscode';
+
+import { IS_WINDOWS } from './utils';
 
 // Reference: https://en.wikipedia.org/wiki/Filename
 const WINDOWS_INVALID_FILE_CHARS = /[\\/:*?"<>|]/g;
@@ -18,8 +18,7 @@ const WINDOWS_FORBIDDEN_NAMES = /^(con|prn|aux|clock\$|nul|lpt[0-9]|com[0-9])(\.
 export function makeValidator(
     existingFileNames: Set<string> = new Set<string>()
 ): (name: string | null | undefined) => string | undefined {
-    const isWindowsOS = process.platform === 'win32';
-    const invalidFileChars = isWindowsOS ? WINDOWS_INVALID_FILE_CHARS : UNIX_INVALID_FILE_CHARS;
+    const invalidFileChars = IS_WINDOWS ? WINDOWS_INVALID_FILE_CHARS : UNIX_INVALID_FILE_CHARS;
     return (name: string | null | undefined): string | undefined => {
         if (!name || name.length === 0 || /^\s+$/.test(name)) {
             return vscode.l10n.t('There are only whitespace characters in the name.');
@@ -30,7 +29,7 @@ export function makeValidator(
             return vscode.l10n.t('The name contains invalid characters.');
         }
 
-        if (isWindowsOS && WINDOWS_FORBIDDEN_NAMES.test(name)) {
+        if (IS_WINDOWS && WINDOWS_FORBIDDEN_NAMES.test(name)) {
             return vscode.l10n.t('Invalid file name on Windows.');
         }
 
@@ -38,11 +37,11 @@ export function makeValidator(
             return vscode.l10n.t('Reserved file name.');
         }
 
-        if (isWindowsOS && name.endsWith('.')) {
+        if (IS_WINDOWS && name.endsWith('.')) {
             return vscode.l10n.t('The name cannot end with a "." on Windows.');
         }
 
-        if (isWindowsOS && name.length !== name.trimEnd().length) {
+        if (IS_WINDOWS && name.length !== name.trimEnd().length) {
             return vscode.l10n.t('The name cannot end with a whitespace on Windows.');
         }
 

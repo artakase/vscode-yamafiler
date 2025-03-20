@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 
+export const IS_MACINTOSH = process.platform === 'darwin';
+export const IS_WINDOWS = process.platform === 'win32';
 export const YAMAFILER_SCHEME = 'yamafiler';
 export const YAMAFILER_LANGUAGE_ID = 'yamafiler';
 
