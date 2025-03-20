@@ -21,6 +21,21 @@ import {
 } from './utils';
 import { makeValidator } from './validator';
 
+function resolveSymlinkIfRequested(sourceUri: vscode.Uri, resolveSymlinks: boolean): vscode.Uri | undefined {
+    if (resolveSymlinks) {
+        try {
+            return vscode.Uri.file(fs.realpathSync(sourceUri.fsPath));
+        } catch (error) {
+            vscode.window.showErrorMessage(
+                vscode.l10n.t('Could not resolve {0}: {1}', sourceUri.fsPath, getErrorMessage(error))
+            );
+            return undefined;
+        }
+    } else {
+        return sourceUri;
+    }
+}
+
 export class Controller {
     private readonly disposables: vscode.Disposable[] = [];
     readonly contentProvider = new YamafilerContentProvider();
@@ -120,7 +135,7 @@ export class Controller {
         const activeUri = getUriFromTab(vscode.window.tabGroups.activeTabGroup.activeTab);
         const homeUri = vscode.Uri.file(os.homedir());
 
-        let targetDirUri: vscode.Uri;
+        let targetDirUri: vscode.Uri | undefined;
         if (ask === 'dialog') {
             const uris = await vscode.window.showOpenDialog({
                 canSelectFiles: false,
@@ -149,16 +164,9 @@ export class Controller {
                 targetDirUri = activeUri;
             }
         } else if (activeUri?.scheme === 'file') {
-            let activeFile = activeUri;
-            if (resolveSymlinks) {
-                try {
-                    activeFile = vscode.Uri.file(fs.realpathSync.native(activeFile.fsPath));
-                } catch (error) {
-                    vscode.window.showErrorMessage(
-                        vscode.l10n.t('Could not resolve {0}: {1}', activeFile.fsPath, getErrorMessage(error))
-                    );
-                    return;
-                }
+            const activeFile = resolveSymlinkIfRequested(activeUri, resolveSymlinks);
+            if (!activeFile) {
+                return;
             }
             targetDirUri = vscode.Uri.joinPath(activeFile, '..');
         } else if (workspaceUri) {
@@ -166,15 +174,9 @@ export class Controller {
         } else {
             targetDirUri = homeUri;
         }
-        if (resolveSymlinks) {
-            try {
-                targetDirUri = vscode.Uri.file(fs.realpathSync.native(targetDirUri.fsPath));
-            } catch (error) {
-                vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not resolve {0}: {1}', targetDirUri.fsPath, getErrorMessage(error))
-                );
-                return;
-            }
+        targetDirUri = resolveSymlinkIfRequested(targetDirUri, resolveSymlinks);
+        if (!targetDirUri) {
+            return;
         }
         await this.showFiler(targetDirUri, column);
     }
@@ -201,61 +203,37 @@ export class Controller {
         if (!focusedEntry) {
             return;
         }
-        let targetUri = focusedEntry.uri;
-        if (resolveSymlinks) {
-            try {
-                targetUri = vscode.Uri.file(fs.realpathSync.native(targetUri.fsPath));
-            } catch (error) {
-                vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not resolve {0}: {1}', targetUri.fsPath, getErrorMessage(error))
-                );
-                return;
-            }
+        const targetUri = resolveSymlinkIfRequested(focusedEntry.uri, resolveSymlinks);
+        if (!targetUri) {
+            return;
         }
-        if (
-            focusedEntry.isDir &&
-            minimatch(targetUri.path, externalFolderPattern, {
-                matchBase: true,
-                dot: true,
-                noext: true,
-                nocase: true,
-            })
-        ) {
-            vscode.env.openExternal(targetUri).then(undefined, (reason: unknown) => {
-                void vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not open {0}: {1}', targetUri.fsPath, getErrorMessage(reason))
-                );
-            });
-        } else if (focusedEntry.isDir) {
-            void this.showFiler(targetUri, 'active');
-        } else if (
-            minimatch(targetUri.path, binaryPattern, { matchBase: true, dot: true, noext: true, nocase: true })
-        ) {
-            void vscode.commands.executeCommand('vscode.open', targetUri, {
-                viewColumn: column === 'active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
-                preserveFocus: preserveFocus,
-                prevew: preview,
-            });
-        } else if (
-            minimatch(targetUri.path, externalPattern, { matchBase: true, dot: true, noext: true, nocase: true })
-        ) {
-            vscode.env.openExternal(targetUri).then(undefined, (reason: unknown) => {
-                void vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not open {0}: {1}', targetUri.fsPath, getErrorMessage(reason))
-                );
-            });
+
+        const matchOptions = { matchBase: true, dot: true, noext: true, nocase: true };
+
+        const handleOpenError = (reason: unknown) => {
+            void vscode.window.showErrorMessage(
+                vscode.l10n.t('Could not open {0}: {1}', targetUri.fsPath, getErrorMessage(reason))
+            );
+        };
+
+        if (focusedEntry.isDir) {
+            if (minimatch(targetUri.path, externalFolderPattern, matchOptions)) {
+                vscode.env.openExternal(targetUri).then(undefined, handleOpenError);
+            } else {
+                void this.showFiler(targetUri, 'active');
+            }
+            return;
+        }
+
+        const viewColumnToUse = column === 'active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside;
+        const viewOptions = { viewColumn: viewColumnToUse, preserveFocus, preview };
+
+        if (minimatch(targetUri.path, binaryPattern, matchOptions)) {
+            void vscode.commands.executeCommand('vscode.open', targetUri, viewOptions);
+        } else if (minimatch(targetUri.path, externalPattern, matchOptions)) {
+            vscode.env.openExternal(targetUri).then(undefined, handleOpenError);
         } else {
-            vscode.window
-                .showTextDocument(targetUri, {
-                    viewColumn: column === 'active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
-                    preserveFocus: preserveFocus,
-                    preview: preview,
-                })
-                .then(undefined, (reason: unknown) => {
-                    void vscode.window.showErrorMessage(
-                        vscode.l10n.t('Could not open {0}: {1}', targetUri.fsPath, getErrorMessage(reason))
-                    );
-                });
+            vscode.window.showTextDocument(targetUri, viewOptions).then(undefined, handleOpenError);
         }
     }
 
@@ -281,15 +259,9 @@ export class Controller {
         if (!focused) {
             return;
         }
-        let targetUri = focused.uri;
-        if (resolveSymlinks) {
-            try {
-                targetUri = vscode.Uri.file(fs.realpathSync.native(targetUri.fsPath));
-            } catch (error) {
-                vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not resolve {0}: {1}', targetUri.fsPath, getErrorMessage(error))
-                );
-            }
+        const targetUri = resolveSymlinkIfRequested(focused.uri, resolveSymlinks);
+        if (!targetUri) {
+            return;
         }
         if (
             !focused.isDir &&
@@ -309,13 +281,11 @@ export class Controller {
         if (resolveSymlinks) {
             uris = [];
             for (const file of files) {
-                try {
-                    uris.push({ uri: vscode.Uri.file(fs.realpathSync.native(file.uri.fsPath)) });
-                } catch (error) {
-                    vscode.window.showErrorMessage(
-                        vscode.l10n.t('Could not resolve {0}: {1}', file.uri.fsPath, getErrorMessage(error))
-                    );
+                const uri = resolveSymlinkIfRequested(file.uri, true);
+                if (!uri) {
+                    return;
                 }
+                uris.push({ uri });
             }
         } else {
             uris = files.map((file) => ({ uri: file.uri }));
