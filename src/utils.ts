@@ -3,53 +3,53 @@ import * as vscode from 'vscode';
 export const YAMAFILER_SCHEME = 'yamafiler';
 export const YAMAFILER_LANGUAGE_ID = 'yamafiler';
 
-export interface FileItem {
+export interface FileEntry {
     readonly uri: vscode.Uri;
     readonly stats: vscode.FileStat;
-    readonly isDirectory: boolean;
-    readonly isSymbolicLink: boolean;
+    readonly isDir: boolean;
+    readonly isSymlink: boolean;
 }
 
-export interface FolderData {
+export interface DirView {
     readonly uri: vscode.Uri;
-    readonly files: FileItem[];
-    readonly selectedIndexes: number[];
-    shouldRefresh: boolean;
+    readonly entries: FileEntry[];
+    readonly asteriskedIndices: number[];
+    needsRefresh: boolean;
 }
 
-export interface Selection {
+export interface NavigationContext {
     readonly editor: vscode.TextEditor;
-    readonly uri: vscode.Uri;
-    readonly files: FileItem[];
-    readonly cursored: FileItem | undefined;
-    readonly folder: FolderData;
-    readonly fileBases: Set<string>;
+    readonly currentDirUri: vscode.Uri;
+    readonly selectedEntries: FileEntry[];
+    readonly focusedEntry: FileEntry | undefined;
+    readonly dirView: DirView;
+    readonly existingFileNames: Set<string>;
 }
 
-export interface Clipboard {
-    readonly mode: 'rename' | 'copy' | 'symlink';
-    readonly uri: vscode.Uri;
-    readonly files: FileItem[];
+export interface PendingFileOperation {
+    readonly operationType: 'rename' | 'copy' | 'symlink';
+    readonly sourceDirUri: vscode.Uri;
+    readonly sourceFileEntries: FileEntry[];
 }
 
-export interface BatchDocument {
-    readonly mode: 'create' | 'rename' | 'copy' | 'symlink';
-    readonly doc: vscode.TextDocument;
-    readonly selection: Selection;
-    isToClose: boolean;
+export interface BatchFileOperation {
+    readonly operationType: 'create' | 'rename' | 'copy' | 'symlink';
+    readonly batchDocument: vscode.TextDocument;
+    readonly navigationContext: NavigationContext;
+    hasCompleted: boolean;
 }
 
-export function getMessage(err: unknown): string {
-    if (err instanceof Error) {
-        return err.message;
-    } else if (err instanceof Object) {
-        return err.toString();
+export function getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+        return error.message;
+    } else if (error instanceof Object) {
+        return error.toString();
     } else {
         return 'unknown error';
     }
 }
 
-export function getTabUri(tab: vscode.Tab | undefined): vscode.Uri | undefined {
+export function getUriFromTab(tab: vscode.Tab | undefined): vscode.Uri | undefined {
     if (!tab) {
         return undefined;
     } else if (

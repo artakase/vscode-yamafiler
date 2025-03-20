@@ -15,11 +15,11 @@ export function activate(context: vscode.ExtensionContext): void {
     }
 
     context.subscriptions.push(
-        vscode.workspace.registerTextDocumentContentProvider(YAMAFILER_SCHEME, controller.provider)
+        vscode.workspace.registerTextDocumentContentProvider(YAMAFILER_SCHEME, controller.contentProvider)
     );
 
     pushCommand('openFiler', controller.openFiler);
-    pushCommand('enter', controller.enter);
+    pushCommand('enter', controller.openFocusedEntry);
     pushCommand('goToParent', controller.goToParent);
     pushCommand('refresh', controller.refresh);
     pushCommand('openWorkspace', controller.openWorkspace);
@@ -27,30 +27,30 @@ export function activate(context: vscode.ExtensionContext): void {
     pushCommand('newFolder', () => controller.create(true));
     pushCommand('newFile', () => controller.create(false));
     pushCommand('newMultipleFiles', () => controller.create(false, true));
-    pushCommand('rename', () => controller.fileAction('rename'));
-    pushCommand('duplicate', () => controller.fileAction('copy'));
-    pushCommand('symlink', () => controller.fileAction('symlink'));
+    pushCommand('rename', () => controller.executeFileOperation('rename'));
+    pushCommand('duplicate', () => controller.executeFileOperation('copy'));
+    pushCommand('symlink', () => controller.executeFileOperation('symlink'));
     pushCommand('delete', controller.delete);
     pushCommand('cut', () => {
-        controller.setClipboard('rename');
+        controller.setPendingOperation('rename');
     });
     pushCommand('copy', () => {
-        controller.setClipboard('copy');
+        controller.setPendingOperation('copy');
     });
     pushCommand('targetForSymlink', () => {
-        controller.setClipboard('symlink');
+        controller.setPendingOperation('symlink');
     });
-    pushCommand('paste', controller.paste);
+    pushCommand('paste', controller.executePendingOperation);
     pushCommand('select', () => {
-        controller.setSelection('on');
+        controller.updateAsterisks('on');
     });
     pushCommand('deselect', () => {
-        controller.setSelection('off');
+        controller.updateAsterisks('off');
     });
     pushCommand('toggleSelection', () => {
-        controller.setSelection('toggle');
+        controller.updateAsterisks('toggle');
     });
     pushCommand('toggleSelectionAll', () => {
-        controller.setSelection('toggleAll');
+        controller.updateAsterisks('toggleAll');
     });
 }

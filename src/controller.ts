@@ -7,15 +7,15 @@ import { minimatch } from 'minimatch';
 
 import * as vscode from 'vscode';
 
-import { YamafilerProvider } from './contentProvider';
+import { YamafilerContentProvider } from './contentProvider';
 import * as edition from './edition';
 import {
-    BatchDocument,
-    Clipboard,
-    FileItem,
-    getMessage,
-    getTabUri,
-    Selection,
+    BatchFileOperation,
+    FileEntry,
+    getErrorMessage,
+    getUriFromTab,
+    NavigationContext,
+    PendingFileOperation,
     YAMAFILER_LANGUAGE_ID,
     YAMAFILER_SCHEME,
 } from './utils';
@@ -23,16 +23,15 @@ import { makeValidator } from './validator';
 
 export class Controller {
     private readonly disposables: vscode.Disposable[] = [];
-    readonly provider;
-    private clipboard: Clipboard | undefined;
-    private batch: BatchDocument | undefined;
-    private tmpDirUri: vscode.Uri | undefined;
+    readonly contentProvider = new YamafilerContentProvider();
+    private pendingFileOperation: PendingFileOperation | undefined;
+    private currentBatchOperation: BatchFileOperation | undefined;
+    private tempDirUri: vscode.Uri | undefined;
 
     constructor(private readonly context: vscode.ExtensionContext) {
-        this.provider = new YamafilerProvider();
-        this.disposables.push(vscode.window.tabGroups.onDidChangeTabs(this.removeCache, this));
-        this.disposables.push(vscode.workspace.onWillSaveTextDocument(this.saveBatch, this));
-        this.disposables.push(vscode.workspace.onDidSaveTextDocument(this.savedBatch, this));
+        this.disposables.push(vscode.window.tabGroups.onDidChangeTabs(this.cleanupClosedViewsFromCache, this));
+        this.disposables.push(vscode.workspace.onWillSaveTextDocument(this.processBatchOperation, this));
+        this.disposables.push(vscode.workspace.onDidSaveTextDocument(this.finalizeBatchOperation, this));
     }
 
     public dispose(): void {
@@ -41,62 +40,68 @@ export class Controller {
         });
     }
 
-    removeCache(event: vscode.TabChangeEvent): void {
-        const closedTabNames = new Set<string>();
+    cleanupClosedViewsFromCache(event: vscode.TabChangeEvent): void {
+        const closedViewPaths = new Set<string>();
         event.closed.forEach((tab) => {
-            const uri = getTabUri(tab);
+            const uri = getUriFromTab(tab);
             if (uri?.scheme === YAMAFILER_SCHEME) {
-                closedTabNames.add(uri.fsPath);
-            } else if (uri?.fsPath && this.batch && path.relative(uri.fsPath, this.batch.doc.uri.fsPath) === '') {
-                this.batch = undefined;
+                closedViewPaths.add(uri.fsPath);
+            } else if (
+                uri?.fsPath &&
+                this.currentBatchOperation &&
+                path.relative(uri.fsPath, this.currentBatchOperation.batchDocument.uri.fsPath) === ''
+            ) {
+                this.currentBatchOperation = undefined;
             }
         });
-        if (closedTabNames.size === 0) {
+        if (closedViewPaths.size === 0) {
             return;
         }
-        const allTabNames = new Set<string>();
+        const remainingViewPaths = new Set<string>();
         vscode.window.tabGroups.all.forEach((tabGroup) => {
             tabGroup.tabs.forEach((tab) => {
-                const uri = getTabUri(tab);
-                if (uri?.scheme === YAMAFILER_SCHEME) {
-                    allTabNames.add(uri.fsPath);
+                const tabUri = getUriFromTab(tab);
+                if (tabUri?.scheme === YAMAFILER_SCHEME) {
+                    remainingViewPaths.add(tabUri.fsPath);
                 }
             });
         });
-        if (this.batch) {
-            if (!allTabNames.has(this.batch.doc.uri.fsPath)) {
-                this.batch = undefined;
+        if (this.currentBatchOperation) {
+            if (!remainingViewPaths.has(this.currentBatchOperation.batchDocument.uri.fsPath)) {
+                this.currentBatchOperation = undefined;
             }
         }
-        closedTabNames.forEach((tabName) => {
-            if (!allTabNames.has(tabName)) {
-                this.provider.cachedFolders.delete(tabName);
+        closedViewPaths.forEach((closedPath) => {
+            if (!remainingViewPaths.has(closedPath)) {
+                this.contentProvider.cachedDirViews.delete(closedPath);
             }
         });
     }
 
     private async showFiler(uri: vscode.Uri, column: 'active' | 'beside' = 'active'): Promise<void> {
         const yamafilerUri = uri.with({ scheme: YAMAFILER_SCHEME });
-        const doc = await vscode.workspace.openTextDocument(yamafilerUri);
-        if (doc.lineAt(0).isEmptyOrWhitespace) {
+        const document = await vscode.workspace.openTextDocument(yamafilerUri);
+        if (document.lineAt(0).isEmptyOrWhitespace) {
             return;
         }
-        if (doc.languageId === YAMAFILER_LANGUAGE_ID) {
-            this.provider.emitChange(yamafilerUri);
+        if (document.languageId === YAMAFILER_LANGUAGE_ID) {
+            this.contentProvider.emitChange(yamafilerUri);
         } else {
-            void vscode.languages.setTextDocumentLanguage(doc, YAMAFILER_LANGUAGE_ID);
+            void vscode.languages.setTextDocumentLanguage(document, YAMAFILER_LANGUAGE_ID);
         }
         let selection: vscode.Range | undefined;
-        if (doc.lineCount > 1) {
+        if (document.lineCount > 1) {
             selection = new vscode.Range(1, 0, 1, 0);
         }
         await vscode.window
-            .showTextDocument(doc, {
+            .showTextDocument(document, {
                 viewColumn: column === 'active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
                 selection,
             })
             .then(undefined, (reason: unknown) =>
-                vscode.window.showErrorMessage(vscode.l10n.t('Could not open {0}: {1}', uri.fsPath, getMessage(reason)))
+                vscode.window.showErrorMessage(
+                    vscode.l10n.t('Could not open {0}: {1}', uri.fsPath, getErrorMessage(reason))
+                )
             );
     }
 
@@ -112,10 +117,10 @@ export class Controller {
         resolveSymlinks?: boolean;
     } = {}): Promise<void> {
         const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri;
-        const activeUri = getTabUri(vscode.window.tabGroups.activeTabGroup.activeTab);
+        const activeUri = getUriFromTab(vscode.window.tabGroups.activeTabGroup.activeTab);
         const homeUri = vscode.Uri.file(os.homedir());
 
-        let uriToOpen: vscode.Uri;
+        let targetDirUri: vscode.Uri;
         if (ask === 'dialog') {
             const uris = await vscode.window.showOpenDialog({
                 canSelectFiles: false,
@@ -125,56 +130,56 @@ export class Controller {
             if (uris?.length !== 1) {
                 return;
             }
-            uriToOpen = uris[0];
+            targetDirUri = uris[0];
         } else if (path === '~') {
-            uriToOpen = homeUri;
+            targetDirUri = homeUri;
         } else if (path.startsWith('~/')) {
-            uriToOpen = vscode.Uri.joinPath(homeUri, path.substring(2));
+            targetDirUri = vscode.Uri.joinPath(homeUri, path.substring(2));
         } else if (path === '${workspaceFolder}' && workspaceUri) {
-            uriToOpen = workspaceUri;
+            targetDirUri = workspaceUri;
         } else if (path.startsWith('${workspaceFolder}/') && workspaceUri) {
-            uriToOpen = vscode.Uri.joinPath(workspaceUri, path.substring(19));
+            targetDirUri = vscode.Uri.joinPath(workspaceUri, path.substring(19));
         } else if (path !== '' && !path.startsWith('${workspaceFolder}')) {
-            uriToOpen = vscode.Uri.file(path);
+            targetDirUri = vscode.Uri.file(path);
         } else if (activeUri?.scheme === YAMAFILER_SCHEME) {
             if (column === 'active') {
                 this.refresh();
                 return;
             } else {
-                uriToOpen = activeUri;
+                targetDirUri = activeUri;
             }
         } else if (activeUri?.scheme === 'file') {
             let activeFile = activeUri;
             if (resolveSymlinks) {
                 try {
                     activeFile = vscode.Uri.file(fs.realpathSync.native(activeFile.fsPath));
-                } catch (e) {
+                } catch (error) {
                     vscode.window.showErrorMessage(
-                        vscode.l10n.t('Could not resolve {0}: {1}', activeFile.fsPath, getMessage(e))
+                        vscode.l10n.t('Could not resolve {0}: {1}', activeFile.fsPath, getErrorMessage(error))
                     );
                     return;
                 }
             }
-            uriToOpen = vscode.Uri.joinPath(activeFile, '..');
+            targetDirUri = vscode.Uri.joinPath(activeFile, '..');
         } else if (workspaceUri) {
-            uriToOpen = workspaceUri;
+            targetDirUri = workspaceUri;
         } else {
-            uriToOpen = homeUri;
+            targetDirUri = homeUri;
         }
         if (resolveSymlinks) {
             try {
-                uriToOpen = vscode.Uri.file(fs.realpathSync.native(uriToOpen.fsPath));
-            } catch (e) {
+                targetDirUri = vscode.Uri.file(fs.realpathSync.native(targetDirUri.fsPath));
+            } catch (error) {
                 vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not resolve {0}: {1}', uriToOpen.fsPath, getMessage(e))
+                    vscode.l10n.t('Could not resolve {0}: {1}', targetDirUri.fsPath, getErrorMessage(error))
                 );
                 return;
             }
         }
-        await this.showFiler(uriToOpen, column);
+        await this.showFiler(targetDirUri, column);
     }
 
-    enter({
+    openFocusedEntry({
         column = 'active',
         preserveFocus = false,
         preview = false,
@@ -191,64 +196,64 @@ export class Controller {
         externalFolderPattern?: string;
         resolveSymlinks?: boolean;
     } = {}): void {
-        const selection = this.getSelection();
-        const cursored = selection?.cursored;
-        if (!cursored) {
+        const context = this.getCurrentNavigationContext();
+        const focusedEntry = context?.focusedEntry;
+        if (!focusedEntry) {
             return;
         }
-        let uriToOpen = cursored.uri;
+        let targetUri = focusedEntry.uri;
         if (resolveSymlinks) {
             try {
-                uriToOpen = vscode.Uri.file(fs.realpathSync.native(uriToOpen.fsPath));
-            } catch (e) {
+                targetUri = vscode.Uri.file(fs.realpathSync.native(targetUri.fsPath));
+            } catch (error) {
                 vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not resolve {0}: {1}', uriToOpen.fsPath, getMessage(e))
+                    vscode.l10n.t('Could not resolve {0}: {1}', targetUri.fsPath, getErrorMessage(error))
                 );
                 return;
             }
         }
         if (
-            cursored.isDirectory &&
-            minimatch(uriToOpen.path, externalFolderPattern, {
+            focusedEntry.isDir &&
+            minimatch(targetUri.path, externalFolderPattern, {
                 matchBase: true,
                 dot: true,
                 noext: true,
                 nocase: true,
             })
         ) {
-            vscode.env.openExternal(uriToOpen).then(undefined, (reason: unknown) => {
+            vscode.env.openExternal(targetUri).then(undefined, (reason: unknown) => {
                 void vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not open {0}: {1}', uriToOpen.fsPath, getMessage(reason))
+                    vscode.l10n.t('Could not open {0}: {1}', targetUri.fsPath, getErrorMessage(reason))
                 );
             });
-        } else if (cursored.isDirectory) {
-            void this.showFiler(uriToOpen, 'active');
+        } else if (focusedEntry.isDir) {
+            void this.showFiler(targetUri, 'active');
         } else if (
-            minimatch(uriToOpen.path, binaryPattern, { matchBase: true, dot: true, noext: true, nocase: true })
+            minimatch(targetUri.path, binaryPattern, { matchBase: true, dot: true, noext: true, nocase: true })
         ) {
-            void vscode.commands.executeCommand('vscode.open', uriToOpen, {
+            void vscode.commands.executeCommand('vscode.open', targetUri, {
                 viewColumn: column === 'active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
                 preserveFocus: preserveFocus,
                 prevew: preview,
             });
         } else if (
-            minimatch(uriToOpen.path, externalPattern, { matchBase: true, dot: true, noext: true, nocase: true })
+            minimatch(targetUri.path, externalPattern, { matchBase: true, dot: true, noext: true, nocase: true })
         ) {
-            vscode.env.openExternal(uriToOpen).then(undefined, (reason: unknown) => {
+            vscode.env.openExternal(targetUri).then(undefined, (reason: unknown) => {
                 void vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not open {0}: {1}', uriToOpen.fsPath, getMessage(reason))
+                    vscode.l10n.t('Could not open {0}: {1}', targetUri.fsPath, getErrorMessage(reason))
                 );
             });
         } else {
             vscode.window
-                .showTextDocument(uriToOpen, {
+                .showTextDocument(targetUri, {
                     viewColumn: column === 'active' ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
                     preserveFocus: preserveFocus,
                     preview: preview,
                 })
                 .then(undefined, (reason: unknown) => {
                     void vscode.window.showErrorMessage(
-                        vscode.l10n.t('Could not open {0}: {1}', uriToOpen.fsPath, getMessage(reason))
+                        vscode.l10n.t('Could not open {0}: {1}', targetUri.fsPath, getErrorMessage(reason))
                     );
                 });
         }
@@ -264,7 +269,7 @@ export class Controller {
     refresh({ resetSelection = false }: { resetSelection?: boolean } = {}): void {
         const uri = vscode.window.activeTextEditor?.document.uri;
         if (uri?.scheme === YAMAFILER_SCHEME) {
-            this.provider.emitChange(uri, resetSelection);
+            this.contentProvider.emitChange(uri, resetSelection);
         }
     }
 
@@ -272,31 +277,31 @@ export class Controller {
         forceNewWindow = false,
         resolveSymlinks = false,
     }: { forceNewWindow?: boolean; resolveSymlinks?: boolean } = {}): void {
-        const cursored = this.getSelection()?.cursored;
-        if (!cursored) {
+        const focused = this.getCurrentNavigationContext()?.focusedEntry;
+        if (!focused) {
             return;
         }
-        let uriToOpen = cursored.uri;
+        let targetUri = focused.uri;
         if (resolveSymlinks) {
             try {
-                uriToOpen = vscode.Uri.file(fs.realpathSync.native(uriToOpen.fsPath));
-            } catch (e) {
+                targetUri = vscode.Uri.file(fs.realpathSync.native(targetUri.fsPath));
+            } catch (error) {
                 vscode.window.showErrorMessage(
-                    vscode.l10n.t('Could not resolve {0}: {1}', uriToOpen.fsPath, getMessage(e))
+                    vscode.l10n.t('Could not resolve {0}: {1}', targetUri.fsPath, getErrorMessage(error))
                 );
             }
         }
         if (
-            !cursored.isDirectory &&
-            !minimatch(uriToOpen.path, '*.code-workspace', { matchBase: true, dot: true, noext: true })
+            !focused.isDir &&
+            !minimatch(targetUri.path, '*.code-workspace', { matchBase: true, dot: true, noext: true })
         ) {
             return;
         }
-        void vscode.commands.executeCommand('vscode.openFolder', uriToOpen, { forceNewWindow });
+        void vscode.commands.executeCommand('vscode.openFolder', targetUri, { forceNewWindow });
     }
 
     addToWorkspace({ resolveSymlinks = false }: { resolveSymlinks?: boolean } = {}): void {
-        const files = this.getSelection()?.files;
+        const files = this.getCurrentNavigationContext()?.selectedEntries;
         if (!files || files.length === 0) {
             return;
         }
@@ -306,9 +311,9 @@ export class Controller {
             for (const file of files) {
                 try {
                     uris.push({ uri: vscode.Uri.file(fs.realpathSync.native(file.uri.fsPath)) });
-                } catch (e) {
+                } catch (error) {
                     vscode.window.showErrorMessage(
-                        vscode.l10n.t('Could not resolve {0}: {1}', file.uri.fsPath, getMessage(e))
+                        vscode.l10n.t('Could not resolve {0}: {1}', file.uri.fsPath, getErrorMessage(error))
                     );
                 }
             }
@@ -325,24 +330,24 @@ export class Controller {
         }
     }
 
-    async create(isDirectory = false, multiple = false): Promise<void> {
-        const selection = this.getSelection('all');
-        if (!selection) {
+    async create(isDir = false, multiple = false): Promise<void> {
+        const context = this.getCurrentNavigationContext('all');
+        if (!context) {
             return;
         }
         if (multiple) {
-            void this.openBatch(selection, 'create');
+            void this.startBatchOperation(context, 'create');
             return;
         }
-        const newBase = await vscode.window.showInputBox({
-            prompt: isDirectory ? vscode.l10n.t('Folder name') : vscode.l10n.t('File name'),
-            validateInput: makeValidator(selection.fileBases),
+        const newFileNameBase = await vscode.window.showInputBox({
+            prompt: isDir ? vscode.l10n.t('Folder name') : vscode.l10n.t('File name'),
+            validateInput: makeValidator(context.existingFileNames),
         });
-        if (newBase) {
-            const uri = vscode.Uri.joinPath(selection.uri, newBase);
+        if (newFileNameBase) {
+            const uri = vscode.Uri.joinPath(context.currentDirUri, newFileNameBase);
             let result: edition.Result;
-            if (isDirectory) {
-                result = await edition.createDirectory(uri);
+            if (isDir) {
+                result = await edition.createDir(uri);
             } else {
                 result = await edition.createFile(uri);
             }
@@ -353,44 +358,44 @@ export class Controller {
         this.refresh({ resetSelection: true });
     }
 
-    async fileAction(mode: 'rename' | 'copy' | 'symlink'): Promise<void> {
-        const selection = this.getSelection(mode === 'rename' ? 'unselected' : 'all');
-        if (!selection || selection.files.length === 0) {
+    async executeFileOperation(operationType: 'rename' | 'copy' | 'symlink'): Promise<void> {
+        const context = this.getCurrentNavigationContext(operationType === 'rename' ? 'unselected' : 'all');
+        if (!context || context.selectedEntries.length === 0) {
             return;
         }
-        if (selection.files.length > 1) {
-            void this.openBatch(selection, mode);
+        if (context.selectedEntries.length > 1) {
+            void this.startBatchOperation(context, operationType);
             return;
         }
-        const file = selection.files[0];
-        const oldBase = path.basename(file.uri.path);
-        let end = oldBase.lastIndexOf('.');
+        const entry = context.selectedEntries[0];
+        const oldBaseName = path.basename(entry.uri.path);
+        let end = oldBaseName.lastIndexOf('.');
         if (end < 1) {
-            end = oldBase.length;
+            end = oldBaseName.length;
         }
-        let prompt: string;
-        if (mode === 'rename') {
-            prompt = vscode.l10n.t('New name');
-        } else if (mode === 'copy') {
-            prompt = vscode.l10n.t('Copy name');
+        let inputPromptText: string;
+        if (operationType === 'rename') {
+            inputPromptText = vscode.l10n.t('New name');
+        } else if (operationType === 'copy') {
+            inputPromptText = vscode.l10n.t('Copy name');
         } else {
-            prompt = vscode.l10n.t('Link name');
+            inputPromptText = vscode.l10n.t('Link name');
         }
-        const newBase = await vscode.window.showInputBox({
-            value: oldBase,
+        const newBaseName = await vscode.window.showInputBox({
+            value: oldBaseName,
             valueSelection: [0, end],
-            prompt,
-            validateInput: makeValidator(selection.fileBases),
+            prompt: inputPromptText,
+            validateInput: makeValidator(context.existingFileNames),
         });
-        if (newBase) {
-            const uri = vscode.Uri.joinPath(selection.uri, newBase);
+        if (newBaseName) {
+            const uri = vscode.Uri.joinPath(context.currentDirUri, newBaseName);
             let result: edition.Result;
-            if (mode === 'rename') {
-                result = await edition.rename(file.uri, uri);
-            } else if (mode === 'copy') {
-                result = await edition.copy(file.uri, uri);
+            if (operationType === 'rename') {
+                result = await edition.rename(entry.uri, uri);
+            } else if (operationType === 'copy') {
+                result = await edition.copy(entry.uri, uri);
             } else {
-                result = await edition.symlink(file.uri, uri);
+                result = await edition.symlink(entry.uri, uri);
             }
             if (result.error) {
                 void vscode.window.showErrorMessage(result.message);
@@ -400,29 +405,29 @@ export class Controller {
     }
 
     async delete({ useTrash = true }: { useTrash?: boolean } = {}): Promise<void> {
-        const selection = this.getSelection();
-        if (!selection || selection.files.length == 0) {
+        const context = this.getCurrentNavigationContext();
+        if (!context || context.selectedEntries.length == 0) {
             return;
         }
-        const pathList = selection.files.map((file) => file.uri.fsPath).join('\n');
+        const selectedEntryPaths = context.selectedEntries.map((entry) => entry.uri.fsPath).join('\n');
         const choiceDelete = vscode.l10n.t('Delete');
-        const answer = await vscode.window.showWarningMessage(
+        const userSelection = await vscode.window.showWarningMessage(
             vscode.l10n.t('Delete this file?'),
-            { modal: true, detail: pathList },
+            { modal: true, detail: selectedEntryPaths },
             choiceDelete
         );
-        if (answer == choiceDelete) {
-            const results = await Promise.all(
-                selection.files.map((file) => edition.delete(file.uri, { recursive: true, useTrash }))
+        if (userSelection == choiceDelete) {
+            const operationResults = await Promise.all(
+                context.selectedEntries.map((entry) => edition.delete(entry.uri, { recursive: true, useTrash }))
             );
             const success: string[] = [];
             const failure: edition.Result[] = [];
-            for (const [index, result] of results.entries()) {
+            for (const [index, result] of operationResults.entries()) {
                 if (result.error) {
                     console.error(result.error);
                     failure.push(result);
                 } else {
-                    success.push(pathList[index]);
+                    success.push(selectedEntryPaths[index]);
                 }
             }
             if (failure.length > 0) {
@@ -433,22 +438,26 @@ export class Controller {
                 }
             }
             if (success.length > 0) {
-                void vscode.window.showInformationMessage(vscode.l10n.t('{0} has been deleted.', pathList));
+                void vscode.window.showInformationMessage(vscode.l10n.t('{0} has been deleted.', selectedEntryPaths));
             }
         }
         this.refresh({ resetSelection: true });
     }
 
-    setClipboard(mode: 'rename' | 'copy' | 'symlink'): void {
-        const selection = this.getSelection();
-        if (!selection || selection.files.length == 0) {
+    setPendingOperation(operationType: 'rename' | 'copy' | 'symlink'): void {
+        const context = this.getCurrentNavigationContext();
+        if (!context || context.selectedEntries.length == 0) {
             return;
         }
-        const pathList = selection.files.map((file) => file.uri.fsPath).join('\n');
-        this.clipboard = { mode, uri: selection.uri, files: selection.files };
-        if (mode === 'rename') {
+        const pathList = context.selectedEntries.map((entries) => entries.uri.fsPath).join('\n');
+        this.pendingFileOperation = {
+            operationType: operationType,
+            sourceDirUri: context.currentDirUri,
+            sourceFileEntries: context.selectedEntries,
+        };
+        if (operationType === 'rename') {
             void vscode.window.showInformationMessage(vscode.l10n.t('{0} has been cut.', pathList));
-        } else if (mode === 'copy') {
+        } else if (operationType === 'copy') {
             void vscode.window.showInformationMessage(vscode.l10n.t('{0} has been copied.', pathList));
         } else {
             void vscode.window.showInformationMessage(vscode.l10n.t('{0} has been targeted.', pathList));
@@ -456,40 +465,40 @@ export class Controller {
         this.refresh({ resetSelection: true });
     }
 
-    async paste(): Promise<void> {
-        const selection = this.getSelection();
-        if (!selection) {
+    async executePendingOperation(): Promise<void> {
+        const context = this.getCurrentNavigationContext();
+        if (!context) {
             return;
         }
-        if (!this.clipboard) {
+        if (!this.pendingFileOperation) {
             return;
         }
-        if (selection.uri.path === this.clipboard.uri.path) {
+        if (context.currentDirUri.path === this.pendingFileOperation.sourceDirUri.path) {
             void vscode.window.showInformationMessage(vscode.l10n.t('Same parent.'));
             return;
         }
         const promises: Promise<edition.Result>[] = [];
-        for (const file of this.clipboard.files) {
-            const oldUri = file.uri;
-            const relPath = path.relative(this.clipboard.uri.fsPath, oldUri.fsPath);
-            const newUri = vscode.Uri.joinPath(selection.uri, relPath);
-            if (this.clipboard.mode === 'rename') {
+        for (const entry of this.pendingFileOperation.sourceFileEntries) {
+            const oldUri = entry.uri;
+            const relativePath = path.relative(this.pendingFileOperation.sourceDirUri.fsPath, oldUri.fsPath);
+            const newUri = vscode.Uri.joinPath(context.currentDirUri, relativePath);
+            if (this.pendingFileOperation.operationType === 'rename') {
                 promises.push(edition.rename(oldUri, newUri, { overwrite: false }));
-            } else if (this.clipboard.mode === 'copy') {
+            } else if (this.pendingFileOperation.operationType === 'copy') {
                 promises.push(edition.copy(oldUri, newUri, { overwrite: false }));
             } else {
                 promises.push(edition.symlink(oldUri, newUri));
             }
         }
-        const results = await Promise.all(promises);
-        const existUris: vscode.Uri[] = [];
-        let containsDirectory = false;
-        for (const [index, result] of results.entries()) {
+        const operationResults = await Promise.all(promises);
+        const conflictingEntries: vscode.Uri[] = [];
+        let containsDir = false;
+        for (const [index, result] of operationResults.entries()) {
             if (result.error) {
                 if (result.error instanceof vscode.FileSystemError && result.error.code === 'FileExists') {
-                    existUris.push(this.clipboard.files[index].uri);
-                    if (this.clipboard.files[index].isDirectory) {
-                        containsDirectory = true;
+                    conflictingEntries.push(this.pendingFileOperation.sourceFileEntries[index].uri);
+                    if (this.pendingFileOperation.sourceFileEntries[index].isDir) {
+                        containsDir = true;
                     }
                 } else {
                     console.error(result.error);
@@ -500,37 +509,37 @@ export class Controller {
         const overwriteAll = vscode.l10n.t('Overwrite');
         const mergeOverwrite = vscode.l10n.t('Overwrite (Merge Folders)');
         const skip = vscode.l10n.t('Skip');
-        if (this.clipboard.mode === 'rename') {
+        if (this.pendingFileOperation.operationType === 'rename') {
             choices.push(overwriteAll, skip);
-        } else if (this.clipboard.mode === 'copy') {
-            if (process.platform === 'win32' || !containsDirectory) {
+        } else if (this.pendingFileOperation.operationType === 'copy') {
+            if (process.platform === 'win32' || !containsDir) {
                 choices.push(overwriteAll, skip);
             } else {
                 choices.push(overwriteAll, mergeOverwrite, skip);
             }
         }
-        let answer: string | undefined;
-        if (existUris.length > 0 && choices.length > 0) {
-            const pathList = existUris.map((uri) => uri.path).join('\n');
-            answer = await vscode.window.showWarningMessage(
+        let userSelection: string | undefined;
+        if (conflictingEntries.length > 0 && choices.length > 0) {
+            const joinedPaths = conflictingEntries.map((uri) => uri.path).join('\n');
+            userSelection = await vscode.window.showWarningMessage(
                 vscode.l10n.t('File already exists. Overwrite?'),
-                { modal: true, detail: pathList },
+                { modal: true, detail: joinedPaths },
                 ...choices
             );
         }
-        if (answer) {
-            const rootUri = selection.uri;
-            const overwrite = answer === overwriteAll || answer === mergeOverwrite;
-            const merge = answer === mergeOverwrite || answer === skip;
+        if (userSelection) {
+            const rootUri = context.currentDirUri;
+            const overwrite = userSelection === overwriteAll || userSelection === mergeOverwrite;
+            const merge = userSelection === mergeOverwrite || userSelection === skip;
 
             const promises: Promise<edition.Result>[] = [];
-            for (const uri of existUris) {
+            for (const uri of conflictingEntries) {
                 const baseName = path.basename(uri.path);
-                if (this.clipboard.mode === 'rename') {
+                if (this.pendingFileOperation.operationType === 'rename') {
                     promises.push(
                         edition.rename(uri, vscode.Uri.joinPath(rootUri, baseName), { overwrite: overwrite })
                     );
-                } else if (this.clipboard.mode === 'copy') {
+                } else if (this.pendingFileOperation.operationType === 'copy') {
                     promises.push(
                         edition.copy(uri, vscode.Uri.joinPath(rootUri, baseName), {
                             overwrite: overwrite,
@@ -539,150 +548,172 @@ export class Controller {
                     );
                 }
             }
-            const results = await Promise.all(promises);
-            let failed = false;
-            results.forEach((result) => {
+            const operationResults = await Promise.all(promises);
+            let hasError = false;
+            operationResults.forEach((result) => {
                 if (result.error) {
-                    if (!failed) {
+                    if (!hasError) {
                         void vscode.window.showErrorMessage(result.message);
-                        failed = true;
+                        hasError = true;
                     }
                     console.error(result.error);
                 }
             });
         }
 
-        this.clipboard = undefined;
+        this.pendingFileOperation = undefined;
         this.refresh({ resetSelection: true });
     }
 
-    setSelection(value: 'on' | 'off' | 'toggle' | 'toggleAll'): void {
-        const selection = this.getSelection();
-        if (!selection) {
+    updateAsterisks(value: 'on' | 'off' | 'toggle' | 'toggleAll'): void {
+        const context = this.getCurrentNavigationContext();
+        if (!context) {
             return;
         }
-        const doc = selection.editor.document;
+        const document = context.editor.document;
 
-        let start = Math.max(selection.editor.selection.start.line - 1, 0);
-        let end = selection.editor.selection.end.line;
+        let start = Math.max(context.editor.selection.start.line - 1, 0);
+        let end = context.editor.selection.end.line;
 
         if (value === 'toggleAll') {
             start = 0;
-            end = doc.lineCount - 1;
+            end = document.lineCount - 1;
         } else if (end === 0) {
-            end = doc.lineCount - 1;
-        } else if (end < doc.lineCount - 1) {
+            end = document.lineCount - 1;
+        } else if (end < document.lineCount - 1) {
             void vscode.commands.executeCommand('cursorMove', { to: 'down', by: 'line' });
         }
 
-        let leftIndex = selection.folder.selectedIndexes.findIndex((value) => value >= start);
-        let rightIndex = selection.folder.selectedIndexes.findIndex((value) => value >= end);
-        if (leftIndex === -1) {
-            leftIndex = 0;
-            rightIndex = 0;
-        } else if (rightIndex === -1) {
-            rightIndex = selection.folder.selectedIndexes.length;
+        let selectionStartIndex = context.dirView.asteriskedIndices.findIndex((value) => value >= start);
+        let selectionEndIndex = context.dirView.asteriskedIndices.findIndex((value) => value >= end);
+        if (selectionStartIndex === -1) {
+            selectionStartIndex = 0;
+            selectionEndIndex = 0;
+        } else if (selectionEndIndex === -1) {
+            selectionEndIndex = context.dirView.asteriskedIndices.length;
         }
 
-        let willBeSelected: boolean;
+        let shouldBeAsterisked: boolean;
         if (value === 'on') {
-            willBeSelected = true;
+            shouldBeAsterisked = true;
         } else if (value === 'off') {
-            willBeSelected = false;
+            shouldBeAsterisked = false;
         } else {
-            willBeSelected = rightIndex - leftIndex !== end - start;
+            shouldBeAsterisked = selectionEndIndex - selectionStartIndex !== end - start;
         }
 
-        if (willBeSelected) {
-            selection.folder.selectedIndexes.splice(
-                leftIndex,
-                rightIndex - leftIndex,
+        if (shouldBeAsterisked) {
+            context.dirView.asteriskedIndices.splice(
+                selectionStartIndex,
+                selectionEndIndex - selectionStartIndex,
                 ...Array.from({ length: end - start }, (_, i) => start + i)
             );
         } else {
-            selection.folder.selectedIndexes.splice(leftIndex, rightIndex - leftIndex);
+            context.dirView.asteriskedIndices.splice(selectionStartIndex, selectionEndIndex - selectionStartIndex);
         }
-        this.provider.emitChange(doc.uri);
+        this.contentProvider.emitChange(document.uri);
     }
 
-    private getSelection(getBaseNames?: 'all' | 'unselected'): Selection | undefined {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
+    private getCurrentNavigationContext(fileNameFilterMode?: 'all' | 'unselected'): NavigationContext | undefined {
+        const activeEditor = vscode.window.activeTextEditor;
+        if (!activeEditor) {
             return undefined;
         }
-        const filerUri = editor.document.uri;
-        if (filerUri.scheme !== YAMAFILER_SCHEME) {
+        const yamafilerUri = activeEditor.document.uri;
+        if (yamafilerUri.scheme !== YAMAFILER_SCHEME) {
             return undefined;
         }
-        const uri = filerUri.with({ scheme: 'file' });
-        const folder = this.provider.cachedFolders.get(uri.fsPath);
-        if (!folder) {
+        const currentDirUri = yamafilerUri.with({ scheme: 'file' });
+        const cachedDirView = this.contentProvider.cachedDirViews.get(currentDirUri.fsPath);
+        if (!cachedDirView) {
             void vscode.window.showErrorMessage(vscode.l10n.t('The cache has been deleted. Please refresh the filer.'));
             return undefined;
         }
-        const selectedIndexes = folder.selectedIndexes;
-        let cursored: FileItem | undefined = undefined;
-        const lineCursor = editor.selection.active.line;
-        if (0 < lineCursor && lineCursor <= folder.files.length) {
-            cursored = folder.files[lineCursor - 1];
+        const asteriskedIndices = cachedDirView.asteriskedIndices;
+        let focusedEntry: FileEntry | undefined = undefined;
+        const cursorLineNumber = activeEditor.selection.active.line;
+        if (0 < cursorLineNumber && cursorLineNumber <= cachedDirView.entries.length) {
+            focusedEntry = cachedDirView.entries[cursorLineNumber - 1];
         }
-        const files: FileItem[] = [];
-        const fileBases = new Set<string>();
-        const setIndexes = new Set(selectedIndexes);
-        folder.files.forEach((file, index) => {
-            if (setIndexes.has(index)) {
-                files.push(file);
+        const selectedEntries: FileEntry[] = [];
+        const existingFileNames = new Set<string>();
+        const asteriskedIndexSet = new Set(asteriskedIndices);
+        cachedDirView.entries.forEach((entry, index) => {
+            if (asteriskedIndexSet.has(index)) {
+                selectedEntries.push(entry);
             }
-            if (getBaseNames === 'all' || !setIndexes.has(index)) {
-                fileBases.add(path.basename(file.uri.path));
+            if (fileNameFilterMode === 'all' || !asteriskedIndexSet.has(index)) {
+                existingFileNames.add(path.basename(entry.uri.path));
             }
         });
-        if (files.length === 0) {
-            const start = Math.max(editor.selection.start.line - 1, 0);
-            const end = editor.selection.end.line;
-            files.splice(0, 0, ...folder.files.slice(start, end));
+        if (selectedEntries.length === 0) {
+            const start = Math.max(activeEditor.selection.start.line - 1, 0);
+            const end = activeEditor.selection.end.line;
+            selectedEntries.splice(0, 0, ...cachedDirView.entries.slice(start, end));
         }
-        return { editor, uri, files, cursored, folder, fileBases };
+        return {
+            editor: activeEditor,
+            currentDirUri: currentDirUri,
+            selectedEntries: selectedEntries,
+            focusedEntry: focusedEntry,
+            dirView: cachedDirView,
+            existingFileNames: existingFileNames,
+        };
     }
 
-    private async openBatch(selection: Selection, mode: 'create' | 'rename' | 'copy' | 'symlink'): Promise<void> {
-        if (this.batch) {
+    private async startBatchOperation(
+        currentContext: NavigationContext,
+        operationType: 'create' | 'rename' | 'copy' | 'symlink'
+    ): Promise<void> {
+        if (this.currentBatchOperation) {
             void vscode.window.showErrorMessage(vscode.l10n.t('Batch already exists. Please save or cancel it first.'));
             return;
         }
-        this.tmpDirUri ??= vscode.Uri.file(fs.mkdtempSync(path.join(os.tmpdir(), 'yamafiler-')));
-        const originalFileUri = vscode.Uri.joinPath(this.tmpDirUri, '.Original.yamafiler-batch');
-        const batchFileUri = vscode.Uri.joinPath(this.tmpDirUri, '.FileNames.yamafiler-batch');
-        if (mode === 'create') {
-            await vscode.workspace.fs.writeFile(batchFileUri, new Uint8Array());
+        this.tempDirUri ??= vscode.Uri.file(fs.mkdtempSync(path.join(os.tmpdir(), 'yamafiler-')));
+        const originalNamesFileUri = vscode.Uri.joinPath(this.tempDirUri, '.Original.yamafiler-batch');
+        const editableNamesFileUri = vscode.Uri.joinPath(this.tempDirUri, '.FileNames.yamafiler-batch');
+        if (operationType === 'create') {
+            await vscode.workspace.fs.writeFile(editableNamesFileUri, new Uint8Array());
         } else {
-            const oldNames = selection.files.map(
-                (file) => path.basename(file.uri.path) + (file.isDirectory ? '/' : '')
+            const selectedEntryNames = currentContext.selectedEntries.map(
+                (file) => path.basename(file.uri.path) + (file.isDir ? '/' : '')
             );
-            await vscode.workspace.fs.writeFile(originalFileUri, new TextEncoder().encode(oldNames.join('\n')));
-            await vscode.workspace.fs.writeFile(batchFileUri, new TextEncoder().encode(oldNames.join('\n')));
+            await vscode.workspace.fs.writeFile(
+                originalNamesFileUri,
+                new TextEncoder().encode(selectedEntryNames.join('\n'))
+            );
+            await vscode.workspace.fs.writeFile(
+                editableNamesFileUri,
+                new TextEncoder().encode(selectedEntryNames.join('\n'))
+            );
         }
 
-        const doc = await vscode.workspace.openTextDocument(batchFileUri);
-        if (mode === 'create') {
-            await vscode.window.showTextDocument(doc, { preview: false });
+        const batchEditDocument = await vscode.workspace.openTextDocument(editableNamesFileUri);
+        if (operationType === 'create') {
+            await vscode.window.showTextDocument(batchEditDocument, { preview: false });
             void vscode.window.showInformationMessage(
                 vscode.l10n.t(
                     'Input file names. For folder names, add "/" (e.g. "foldername/"). Save the tab manually to execute. Close the tab to cancel.'
                 )
             );
-        } else if (mode === 'rename') {
-            void vscode.commands.executeCommand('vscode.diff', originalFileUri, batchFileUri, 'Old Names ↔ New Names', {
-                preview: false,
-            });
+        } else if (operationType === 'rename') {
+            void vscode.commands.executeCommand(
+                'vscode.diff',
+                originalNamesFileUri,
+                editableNamesFileUri,
+                'Old Names ↔ New Names',
+                {
+                    preview: false,
+                }
+            );
             void vscode.window.showInformationMessage(
                 vscode.l10n.t('Edit file names. Save this tab manually to execute. Close this tab to cancel.')
             );
-        } else if (mode === 'copy') {
+        } else if (operationType === 'copy') {
             void vscode.commands.executeCommand(
                 'vscode.diff',
-                originalFileUri,
-                batchFileUri,
+                originalNamesFileUri,
+                editableNamesFileUri,
                 'Source Names ↔ Dest Names',
                 {
                     preview: false,
@@ -694,8 +725,8 @@ export class Controller {
         } else {
             void vscode.commands.executeCommand(
                 'vscode.diff',
-                originalFileUri,
-                batchFileUri,
+                originalNamesFileUri,
+                editableNamesFileUri,
                 'Target Names ↔ Path Names',
                 {
                     preview: false,
@@ -705,24 +736,38 @@ export class Controller {
                 vscode.l10n.t('Edit path names. Save this tab manually to execute. Close this tab to cancel.')
             );
         }
-        this.batch = { mode, doc, selection, isToClose: false };
-        this.provider.emitChange(selection.editor.document.uri, true);
+        this.currentBatchOperation = {
+            operationType: operationType,
+            batchDocument: batchEditDocument,
+            navigationContext: currentContext,
+            hasCompleted: false,
+        };
+        this.contentProvider.emitChange(currentContext.editor.document.uri, true);
     }
 
-    async saveBatch(event: vscode.TextDocumentWillSaveEvent): Promise<void> {
-        const batch = this.batch;
-        if (!this.batch || event.document !== batch?.doc || event.reason !== vscode.TextDocumentSaveReason.Manual) {
+    async processBatchOperation(event: vscode.TextDocumentWillSaveEvent): Promise<void> {
+        const batchOperation = this.currentBatchOperation;
+        if (
+            !this.currentBatchOperation ||
+            event.document !== batchOperation?.batchDocument ||
+            event.reason !== vscode.TextDocumentSaveReason.Manual
+        ) {
             return;
         }
 
-        const validateFileName = makeValidator(batch.selection.fileBases);
+        const fileNameValidator = makeValidator(batchOperation.navigationContext.existingFileNames);
 
-        const batchLineCount = batch.doc.lineAt(batch.doc.lineCount - 1).isEmptyOrWhitespace
-            ? batch.doc.lineCount - 1
-            : batch.doc.lineCount;
+        const documentLineCount = batchOperation.batchDocument.lineAt(batchOperation.batchDocument.lineCount - 1)
+            .isEmptyOrWhitespace
+            ? batchOperation.batchDocument.lineCount - 1
+            : batchOperation.batchDocument.lineCount;
 
-        if (batch.mode === 'rename' || batch.mode === 'copy' || batch.mode === 'symlink') {
-            if (batchLineCount !== batch.selection.files.length) {
+        if (
+            batchOperation.operationType === 'rename' ||
+            batchOperation.operationType === 'copy' ||
+            batchOperation.operationType === 'symlink'
+        ) {
+            if (documentLineCount !== batchOperation.navigationContext.selectedEntries.length) {
                 void vscode.window.showInformationMessage(
                     vscode.l10n.t('The line count does not match the file selection!')
                 );
@@ -730,82 +775,85 @@ export class Controller {
             }
         }
 
-        const newFileNameSet = new Set<string>();
-        const createUris: [vscode.Uri, boolean][] = [];
-        const moveUris: [vscode.Uri, vscode.Uri][] = [];
-        for (let i = 0; i < batchLineCount; i++) {
-            let newBase = batch.doc.lineAt(i).text;
-            const isDirectory = batch.mode === 'create' ? newBase.endsWith('/') : batch.selection.files[i].isDirectory;
-            if (newBase.endsWith('/')) {
-                newBase = newBase.slice(0, -1);
+        const uniqueFileNameSet = new Set<string>();
+        const fileCreationEntries: [vscode.Uri, boolean][] = [];
+        const sourceDestUriPairs: [vscode.Uri, vscode.Uri][] = [];
+        for (let i = 0; i < documentLineCount; i++) {
+            let newBaseName = batchOperation.batchDocument.lineAt(i).text;
+            const isDir =
+                batchOperation.operationType === 'create'
+                    ? newBaseName.endsWith('/')
+                    : batchOperation.navigationContext.selectedEntries[i].isDir;
+            if (newBaseName.endsWith('/')) {
+                newBaseName = newBaseName.slice(0, -1);
             }
-            const message = validateFileName(newBase);
+            const message = fileNameValidator(newBaseName);
             if (message) {
                 void vscode.window.showInformationMessage(
                     vscode.l10n.t('Invalid value at line {0}: {1}', i + 1, message)
                 );
                 return;
             }
-            newFileNameSet.add(newBase);
-            const newUri = vscode.Uri.joinPath(this.batch.selection.uri, newBase);
-            if (batch.mode === 'create') {
-                createUris.push([newUri, isDirectory]);
+            uniqueFileNameSet.add(newBaseName);
+            const newUri = vscode.Uri.joinPath(this.currentBatchOperation.navigationContext.currentDirUri, newBaseName);
+            if (batchOperation.operationType === 'create') {
+                fileCreationEntries.push([newUri, isDir]);
             } else {
-                moveUris.push([batch.selection.files[i].uri, newUri]);
+                sourceDestUriPairs.push([batchOperation.navigationContext.selectedEntries[i].uri, newUri]);
             }
         }
-        if (newFileNameSet.size < batchLineCount) {
+        if (uniqueFileNameSet.size < documentLineCount) {
             void vscode.window.showInformationMessage(vscode.l10n.t('Duplicated file names.'));
             return;
         }
-        const promises: Promise<edition.Result>[] = [];
-        if (batch.mode === 'create') {
-            createUris.forEach(([newUri, isDirectory]) => {
-                if (isDirectory) {
-                    promises.push(edition.createDirectory(newUri));
+        const operationPromises: Promise<edition.Result>[] = [];
+        if (batchOperation.operationType === 'create') {
+            fileCreationEntries.forEach(([newUri, isDir]) => {
+                if (isDir) {
+                    operationPromises.push(edition.createDir(newUri));
                 } else {
-                    promises.push(edition.createFile(newUri));
+                    operationPromises.push(edition.createFile(newUri));
                 }
             });
         } else {
-            moveUris.forEach(([oldUri, newUri]) => {
-                if (batch.mode === 'rename') {
-                    promises.push(edition.rename(oldUri, newUri));
-                } else if (batch.mode === 'copy') {
-                    promises.push(edition.copy(oldUri, newUri));
-                } else if (batch.mode === 'symlink') {
-                    promises.push(edition.symlink(oldUri, newUri));
+            sourceDestUriPairs.forEach(([oldUri, newUri]) => {
+                if (batchOperation.operationType === 'rename') {
+                    operationPromises.push(edition.rename(oldUri, newUri));
+                } else if (batchOperation.operationType === 'copy') {
+                    operationPromises.push(edition.copy(oldUri, newUri));
+                } else if (batchOperation.operationType === 'symlink') {
+                    operationPromises.push(edition.symlink(oldUri, newUri));
                 }
             });
         }
-        const results = await Promise.all(promises);
-        let failed = false;
-        results.forEach((result) => {
+        const operationResults = await Promise.all(operationPromises);
+        let hasError = false;
+        operationResults.forEach((result) => {
             if (result.error) {
-                if (!failed) {
+                if (!hasError) {
                     void vscode.window.showErrorMessage(result.message);
-                    failed = true;
+                    hasError = true;
                 }
                 console.error(result.error);
             }
         });
-        this.batch.isToClose = true;
+        this.currentBatchOperation.hasCompleted = true;
 
-        this.provider.emitChange(batch.selection.uri, true);
+        this.contentProvider.emitChange(batchOperation.navigationContext.currentDirUri, true);
     }
 
-    savedBatch(document: vscode.TextDocument): void {
-        const batch = this.batch;
-        if (!this.batch || document !== batch?.doc || !batch.isToClose) {
+    finalizeBatchOperation(document: vscode.TextDocument): void {
+        const batch = this.currentBatchOperation;
+        if (!this.currentBatchOperation || document !== batch?.batchDocument || !batch.hasCompleted) {
             return;
         }
-        const at = vscode.window.tabGroups.activeTabGroup.activeTab;
-        if (at?.input instanceof vscode.TabInputText || at?.input instanceof vscode.TabInputTextDiff) {
-            const tabPath = getTabUri(at)?.fsPath;
-            if (tabPath && path.relative(tabPath, batch.doc.uri.fsPath) === '') {
-                void vscode.window.tabGroups.close(at);
+        const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
+        if (activeTab?.input instanceof vscode.TabInputText || activeTab?.input instanceof vscode.TabInputTextDiff) {
+            const tabPath = getUriFromTab(activeTab)?.fsPath;
+            if (tabPath && path.relative(tabPath, batch.batchDocument.uri.fsPath) === '') {
+                void vscode.window.tabGroups.close(activeTab);
             }
         }
-        this.batch = undefined;
+        this.currentBatchOperation = undefined;
     }
 }

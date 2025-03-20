@@ -5,47 +5,49 @@ import { filesize } from 'filesize';
 
 import * as vscode from 'vscode';
 
-import { FileItem, FolderData, getMessage, YAMAFILER_SCHEME } from './utils';
+import { DirView, FileEntry, getErrorMessage, YAMAFILER_SCHEME } from './utils';
 
-export function sortFunc(a: FileItem, b: FileItem): number {
-    const dirOrder = (a.isDirectory ? 0 : 1) - (b.isDirectory ? 0 : 1);
+export function compareFileSystemEntries(entryA: FileEntry, entryB: FileEntry): number {
+    const dirOrder = (entryA.isDir ? 0 : 1) - (entryB.isDir ? 0 : 1);
     if (dirOrder !== 0) {
         return dirOrder;
     }
-    return a.uri.path.localeCompare(b.uri.path);
+    return entryA.uri.path.localeCompare(entryB.uri.path);
 }
 
-function makeLine(file: FileItem, isSelected: boolean): string {
-    const timeStr = new Date(file.stats.mtime).toISOString().substring(5, 16).replace('T', ' ');
-    const fileName = path.basename(file.uri.path);
-    const markSelected = isSelected ? '*' : ' ';
-    const markDirectory = file.isDirectory ? '/' : '';
-    const markSymbolicLink =
-        file.isSymbolicLink && file.stats.type & (vscode.FileType.Directory | vscode.FileType.File)
+function formatEntryForDisplay(entry: FileEntry, isAsterisked: boolean): string {
+    const formattedModTime = new Date(entry.stats.mtime).toISOString().substring(5, 16).replace('T', ' ');
+    const entryName = path.basename(entry.uri.path);
+    const asteriskOrSpace = isAsterisked ? '*' : ' ';
+    const dirMarker = entry.isDir ? '/' : '';
+    const symlinkMarker =
+        entry.isSymlink && entry.stats.type & (vscode.FileType.Directory | vscode.FileType.File)
             ? 'L'
-            : file.isSymbolicLink
+            : entry.isSymlink
             ? 'l'
             : ' ';
-    const sizeStr = file.isDirectory
+    const formattedSize = entry.isDir
         ? ''
-        : filesize(file.stats.size, { base: 2, standard: 'jedec', round: 1, symbols: { B: ' B' } });
+        : filesize(entry.stats.size, { base: 2, standard: 'jedec', round: 1, symbols: { B: ' B' } });
 
-    return `${markSelected}${markSymbolicLink}${sizeStr.padStart(9)} ${timeStr} ${fileName}${markDirectory}`;
+    return `${asteriskOrSpace}${symlinkMarker}${formattedSize.padStart(
+        9
+    )} ${formattedModTime} ${entryName}${dirMarker}`;
 }
 
-function tildify(p: string): string {
-    const relPath = path.relative(vscode.Uri.file(os.homedir()).path, vscode.Uri.file(p).path);
-    if (relPath === '') {
+function tildify(absolutePath: string): string {
+    const relativePath = path.relative(vscode.Uri.file(os.homedir()).path, vscode.Uri.file(absolutePath).path);
+    if (relativePath === '') {
         return '~';
-    } else if (relPath.startsWith('..')) {
-        return p;
+    } else if (relativePath.startsWith('..')) {
+        return absolutePath;
     } else {
-        return `~${vscode.Uri.file(relPath).fsPath}`;
+        return `~${vscode.Uri.file(relativePath).fsPath}`;
     }
 }
 
-export class YamafilerProvider implements vscode.TextDocumentContentProvider {
-    readonly cachedFolders = new Map<string, FolderData>();
+export class YamafilerContentProvider implements vscode.TextDocumentContentProvider {
+    readonly cachedDirViews = new Map<string, DirView>();
     private readonly onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
     readonly onDidChange = this.onDidChangeEmitter.event;
 
@@ -54,64 +56,66 @@ export class YamafilerProvider implements vscode.TextDocumentContentProvider {
     }
 
     async provideTextDocumentContent(uri: vscode.Uri): Promise<string | undefined> {
-        let folder: FolderData;
+        let dirView: DirView;
         try {
-            folder = await this.readFolder(uri.with({ scheme: 'file' }));
+            dirView = await this.loadDirContents(uri.with({ scheme: 'file' }));
         } catch (error) {
             console.error(error);
             void vscode.window.showErrorMessage(
-                vscode.l10n.t('Could not read {0}: {1}', uri.fsPath, getMessage(error))
+                vscode.l10n.t('Could not read {0}: {1}', uri.fsPath, getErrorMessage(error))
             );
             return '';
         }
-        const header = `${tildify(uri.fsPath)}:`;
-        const setSelection = new Set(folder.selectedIndexes);
-        return [header].concat(folder.files.map((file, index) => makeLine(file, setSelection.has(index)))).join('\n');
+        const dirHeaderLine = `${tildify(uri.fsPath)}:`;
+        const asteriskedIndexSet = new Set(dirView.asteriskedIndices);
+        return [dirHeaderLine]
+            .concat(dirView.entries.map((entry, index) => formatEntryForDisplay(entry, asteriskedIndexSet.has(index))))
+            .join('\n');
     }
 
-    private async readFolder(uri: vscode.Uri): Promise<FolderData> {
-        const cachedFolder = this.cachedFolders.get(uri.fsPath);
-        if (cachedFolder?.shouldRefresh === false) {
-            return cachedFolder;
+    private async loadDirContents(uri: vscode.Uri): Promise<DirView> {
+        const cachedDirView = this.cachedDirViews.get(uri.fsPath);
+        if (cachedDirView?.needsRefresh === false) {
+            return cachedDirView;
         }
-        const files: FileItem[] = [];
+        const entries: FileEntry[] = [];
         for (const [filename, filetype] of await vscode.workspace.fs.readDirectory(uri)) {
-            const fileUri = vscode.Uri.joinPath(uri, filename);
+            const entryUri = vscode.Uri.joinPath(uri, filename);
             try {
-                const stats = await vscode.workspace.fs.stat(fileUri);
-                files.push({
-                    uri: fileUri,
+                const stats = await vscode.workspace.fs.stat(entryUri);
+                entries.push({
+                    uri: entryUri,
                     stats,
-                    isDirectory: !!(filetype & vscode.FileType.Directory),
-                    isSymbolicLink: !!(filetype & vscode.FileType.SymbolicLink),
+                    isDir: !!(filetype & vscode.FileType.Directory),
+                    isSymlink: !!(filetype & vscode.FileType.SymbolicLink),
                 });
-            } catch (err) {
-                console.log(`Could not get stat of ${fileUri.toString()}: ${getMessage(err)}`);
+            } catch (error) {
+                console.log(`Could not get stat of ${entryUri.toString()}: ${getErrorMessage(error)}`);
             }
         }
-        files.sort(sortFunc);
-        const selectedIndexes: number[] = [];
-        if (cachedFolder) {
-            const selectedFileNames = new Set(
-                cachedFolder.selectedIndexes.map((index) => cachedFolder.files[index].uri.fsPath)
+        entries.sort(compareFileSystemEntries);
+        const asteriskedIndices: number[] = [];
+        if (cachedDirView) {
+            const asteriskedFileNameSet = new Set(
+                cachedDirView.asteriskedIndices.map((index) => cachedDirView.entries[index].uri.fsPath)
             );
-            files.forEach((file, index) => {
-                if (selectedFileNames.has(file.uri.fsPath)) {
-                    selectedIndexes.push(index);
+            entries.forEach((entry, index) => {
+                if (asteriskedFileNameSet.has(entry.uri.fsPath)) {
+                    asteriskedIndices.push(index);
                 }
             });
         }
-        const resultFolder = { uri, files, selectedIndexes, shouldRefresh: false };
-        this.cachedFolders.set(uri.fsPath, resultFolder);
-        return resultFolder;
+        const refreshedDirView = { uri, entries, asteriskedIndices, needsRefresh: false };
+        this.cachedDirViews.set(uri.fsPath, refreshedDirView);
+        return refreshedDirView;
     }
 
-    emitChange(uri: vscode.Uri, resetSelection = false): void {
-        const cachedFolder = this.cachedFolders.get(uri.fsPath);
-        if (cachedFolder) {
-            cachedFolder.shouldRefresh = true;
-            if (resetSelection) {
-                cachedFolder.selectedIndexes.splice(0);
+    emitChange(uri: vscode.Uri, clearAsterisks = false): void {
+        const cachedDirView = this.cachedDirViews.get(uri.fsPath);
+        if (cachedDirView) {
+            cachedDirView.needsRefresh = true;
+            if (clearAsterisks) {
+                cachedDirView.asteriskedIndices.splice(0);
             }
         }
         this.onDidChangeEmitter.fire(uri.with({ scheme: YAMAFILER_SCHEME }));
