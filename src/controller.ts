@@ -326,7 +326,7 @@ export class Controller {
             ...uris
         );
         if (!success) {
-            void vscode.window.showErrorMessage(vscode.l10n.t('Failed to add to workspace.'));
+            void vscode.window.showErrorMessage(vscode.l10n.t('Could not add selected items to workspace.'));
         }
     }
 
@@ -410,9 +410,11 @@ export class Controller {
             return;
         }
         const selectedEntryPaths = context.selectedEntries.map((entry) => entry.uri.fsPath).join('\n');
-        const choiceDelete = vscode.l10n.t('Delete');
+        const choiceDelete = useTrash ? vscode.l10n.t('Move to Trash') : vscode.l10n.t('Delete Permanently');
         const userSelection = await vscode.window.showWarningMessage(
-            vscode.l10n.t('Delete this file?'),
+            useTrash
+                ? vscode.l10n.t('Are you sure you want to move the selected items to the trash?')
+                : vscode.l10n.t('Are you sure you want to permanently delete the selected items?'),
             { modal: true, detail: selectedEntryPaths },
             choiceDelete
         );
@@ -438,7 +440,9 @@ export class Controller {
                 }
             }
             if (success.length > 0) {
-                void vscode.window.showInformationMessage(vscode.l10n.t('{0} has been deleted.', selectedEntryPaths));
+                void vscode.window.showInformationMessage(
+                    vscode.l10n.t('Successfully deleted {0} items.', success.length)
+                );
             }
         }
         this.refresh({ resetSelection: true });
@@ -449,18 +453,23 @@ export class Controller {
         if (!context || context.selectedEntries.length == 0) {
             return;
         }
-        const pathList = context.selectedEntries.map((entries) => entries.uri.fsPath).join('\n');
         this.pendingFileOperation = {
             operationType: operationType,
             sourceDirUri: context.currentDirUri,
             sourceFileEntries: context.selectedEntries,
         };
         if (operationType === 'rename') {
-            void vscode.window.showInformationMessage(vscode.l10n.t('{0} has been cut.', pathList));
+            void vscode.window.showInformationMessage(
+                vscode.l10n.t('Prepared {0} items for moving.', context.selectedEntries.length)
+            );
         } else if (operationType === 'copy') {
-            void vscode.window.showInformationMessage(vscode.l10n.t('{0} has been copied.', pathList));
+            void vscode.window.showInformationMessage(
+                vscode.l10n.t('Prepared {0} items for copying.', context.selectedEntries.length)
+            );
         } else {
-            void vscode.window.showInformationMessage(vscode.l10n.t('{0} has been targeted.', pathList));
+            void vscode.window.showInformationMessage(
+                vscode.l10n.t('Prepared {0} items for symbolic link creation.', context.selectedEntries.length)
+            );
         }
         this.refresh({ resetSelection: true });
     }
@@ -474,7 +483,9 @@ export class Controller {
             return;
         }
         if (context.currentDirUri.path === this.pendingFileOperation.sourceDirUri.path) {
-            void vscode.window.showInformationMessage(vscode.l10n.t('Same parent.'));
+            void vscode.window.showErrorMessage(
+                vscode.l10n.t('Could not paste: Source and destination folders are the same.')
+            );
             return;
         }
         const promises: Promise<edition.Result>[] = [];
@@ -626,7 +637,7 @@ export class Controller {
         const currentDirUri = yamafilerUri.with({ scheme: 'file' });
         const cachedDirView = this.contentProvider.cachedDirViews.get(currentDirUri.fsPath);
         if (!cachedDirView) {
-            void vscode.window.showErrorMessage(vscode.l10n.t('The cache has been deleted. Please refresh the filer.'));
+            void vscode.window.showErrorMessage(vscode.l10n.t('Cache not found. Please refresh to rebuild the cache.'));
             return undefined;
         }
         const asteriskedIndices = cachedDirView.asteriskedIndices;
@@ -666,7 +677,11 @@ export class Controller {
         operationType: 'create' | 'rename' | 'copy' | 'symlink'
     ): Promise<void> {
         if (this.currentBatchOperation) {
-            void vscode.window.showErrorMessage(vscode.l10n.t('Batch already exists. Please save or cancel it first.'));
+            void vscode.window.showErrorMessage(
+                vscode.l10n.t(
+                    'A batch operation is already in progress. Please finish or cancel it before starting a new one.'
+                )
+            );
             return;
         }
         this.tempDirUri ??= vscode.Uri.file(fs.mkdtempSync(path.join(os.tmpdir(), 'yamafiler-')));
@@ -693,7 +708,7 @@ export class Controller {
             await vscode.window.showTextDocument(batchEditDocument, { preview: false });
             void vscode.window.showInformationMessage(
                 vscode.l10n.t(
-                    'Input file names. For folder names, add "/" (e.g. "foldername/"). Save the tab manually to execute. Close the tab to cancel.'
+                    'Enter one filename per line. Add a trailing "/" to create folders. Save to create files or close to cancel.'
                 )
             );
         } else if (operationType === 'rename') {
@@ -707,7 +722,7 @@ export class Controller {
                 }
             );
             void vscode.window.showInformationMessage(
-                vscode.l10n.t('Edit file names. Save this tab manually to execute. Close this tab to cancel.')
+                vscode.l10n.t('Edit filenames in the right panel. Save to apply changes or close to cancel.')
             );
         } else if (operationType === 'copy') {
             void vscode.commands.executeCommand(
@@ -720,7 +735,7 @@ export class Controller {
                 }
             );
             void vscode.window.showInformationMessage(
-                vscode.l10n.t('Edit file names. Save this tab manually to execute. Close this tab to cancel.')
+                vscode.l10n.t('Edit destination filenames in the right panel. Save to copy files or close to cancel.')
             );
         } else {
             void vscode.commands.executeCommand(
@@ -733,7 +748,7 @@ export class Controller {
                 }
             );
             void vscode.window.showInformationMessage(
-                vscode.l10n.t('Edit path names. Save this tab manually to execute. Close this tab to cancel.')
+                vscode.l10n.t('Edit link names in the right panel. Save to create symlinks or close to cancel.')
             );
         }
         this.currentBatchOperation = {
@@ -768,8 +783,12 @@ export class Controller {
             batchOperation.operationType === 'symlink'
         ) {
             if (documentLineCount !== batchOperation.navigationContext.selectedEntries.length) {
-                void vscode.window.showInformationMessage(
-                    vscode.l10n.t('The line count does not match the file selection!')
+                void vscode.window.showErrorMessage(
+                    vscode.l10n.t(
+                        'Line count mismatch: Expected {1} lines but found {0}.',
+                        batchOperation.navigationContext.selectedEntries.length,
+                        documentLineCount
+                    )
                 );
                 return;
             }
@@ -789,8 +808,8 @@ export class Controller {
             }
             const message = fileNameValidator(newBaseName);
             if (message) {
-                void vscode.window.showInformationMessage(
-                    vscode.l10n.t('Invalid value at line {0}: {1}', i + 1, message)
+                void vscode.window.showErrorMessage(
+                    vscode.l10n.t('Invalid filename at line {0}: "{1}" ({2})', i + 1, newBaseName, message)
                 );
                 return;
             }
@@ -803,7 +822,9 @@ export class Controller {
             }
         }
         if (uniqueFileNameSet.size < documentLineCount) {
-            void vscode.window.showInformationMessage(vscode.l10n.t('Duplicated file names.'));
+            void vscode.window.showErrorMessage(
+                vscode.l10n.t('Duplicate filenames detected. All filenames must be unique within this folder.')
+            );
             return;
         }
         const operationPromises: Promise<edition.Result>[] = [];

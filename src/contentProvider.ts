@@ -90,7 +90,7 @@ export class YamafilerContentProvider implements vscode.TextDocumentContentProvi
                     isSymlink: !!(filetype & vscode.FileType.SymbolicLink),
                 });
             } catch (error) {
-                console.log(`Could not get stat of ${entryUri.toString()}: ${getErrorMessage(error)}`);
+                console.log(`Could not get stats for ${entryUri.toString()}: ${getErrorMessage(error)}`);
             }
         }
         entries.sort(compareFileSystemEntries);

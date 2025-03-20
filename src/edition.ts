@@ -88,7 +88,7 @@ export function copy(
 
 function _delete(uri: vscode.Uri, options?: { recursive?: boolean; useTrash?: boolean }): Promise<Result> {
     function formatErrorMessage(errorMessage: string) {
-        return vscode.l10n.t('Failed to delete {0}: {1}', uri.fsPath, errorMessage);
+        return vscode.l10n.t('Could not delete {0}: {1}', uri.fsPath, errorMessage);
     }
     return resolveResult(vscode.workspace.fs.delete(uri, options), formatErrorMessage);
 }
@@ -97,7 +97,12 @@ export { _delete as delete };
 
 export function symlink(targetUri: vscode.Uri, symlinkUri: vscode.Uri): Promise<Result> {
     function formatErrorMessage(errorMessage: string) {
-        return vscode.l10n.t('Could not link {0} to {1}: {2}', symlinkUri.fsPath, targetUri.fsPath, errorMessage);
+        return vscode.l10n.t(
+            'Could not create symbolic link {0} pointing to {1}: {2}',
+            symlinkUri.fsPath,
+            targetUri.fsPath,
+            errorMessage
+        );
     }
     return resolveResult(fsPromises.symlink(targetUri.fsPath, symlinkUri.fsPath), formatErrorMessage);
 }
