@@ -1,61 +1,67 @@
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *  Original work: Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Modified work: Copyright (c) 2023-2025 TAKASE Arihiro - enhancements and new features.
+ *
+ *  This code is licensed under the MIT License.
+ *  See LICENSE file in the project root for complete license information.
  *--------------------------------------------------------------------------------------------*/
-/*---------------------------------------------------------------------------------------------
- *  Modified by TAKASE Arihiro.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+
 import * as vscode from 'vscode';
 
 import { IS_WINDOWS } from './utils';
 
 // Reference: https://en.wikipedia.org/wiki/Filename
-const WINDOWS_INVALID_FILE_CHARS = /[\\/:*?"<>|]/g;
-const UNIX_INVALID_FILE_CHARS = /[\\/]/g;
+const WINDOWS_INVALID_FILE_CHARS = /[\\/:*?"<>|]/;
+const UNIX_INVALID_FILE_CHARS = /[\\/]/;
 const WINDOWS_FORBIDDEN_NAMES = /^(con|prn|aux|clock\$|nul|lpt[0-9]|com[0-9])(\.(.*?))?$/i;
 
 export function makeValidator(
     existingFileNames: Set<string> = new Set<string>()
-): (name: string | null | undefined) => string | undefined {
-    const invalidFileChars = IS_WINDOWS ? WINDOWS_INVALID_FILE_CHARS : UNIX_INVALID_FILE_CHARS;
-    return (name: string | null | undefined): string | undefined => {
-        if (!name || name.length === 0 || /^\s+$/.test(name)) {
-            return vscode.l10n.t('There are only whitespace characters in the name.');
-        }
-
-        invalidFileChars.lastIndex = 0; // the holy grail of software development
-        if (invalidFileChars.test(name)) {
-            return vscode.l10n.t('The name contains invalid characters.');
-        }
-
-        if (IS_WINDOWS && WINDOWS_FORBIDDEN_NAMES.test(name)) {
-            return vscode.l10n.t('Invalid file name on Windows.');
+): (name: string) => string | undefined {
+    return (name: string): string | undefined => {
+        if (!name || name !== name.trim()) {
+            return vscode.l10n.t('File name cannot be empty or contain leading/trailing whitespace.');
         }
 
         if (name === '.' || name === '..') {
-            return vscode.l10n.t('Reserved file name.');
-        }
-
-        if (IS_WINDOWS && name.endsWith('.')) {
-            return vscode.l10n.t('The name cannot end with a "." on Windows.');
-        }
-
-        if (IS_WINDOWS && name.length !== name.trimEnd().length) {
-            return vscode.l10n.t('The name cannot end with a whitespace on Windows.');
+            return vscode.l10n.t('File names "." and ".." are reserved by the system and cannot be used.');
         }
 
         if (name.length > 255) {
-            return vscode.l10n.t('The name is too long.');
+            return vscode.l10n.t(
+                'File name is too long ({0} characters). Maximum allowed is 255 characters.',
+                name.length
+            );
+        }
+
+        if (IS_WINDOWS) {
+            if (WINDOWS_INVALID_FILE_CHARS.test(name)) {
+                const invalidChars = '\\, /, :, *, ?, ", <, >, |';
+                return vscode.l10n.t('File name contains invalid characters ({0}) on Windows.', invalidChars);
+            }
+
+            if (WINDOWS_FORBIDDEN_NAMES.test(name)) {
+                return vscode.l10n.t(
+                    'File name is reserved by Windows (CON, PRN, AUX, etc.). Please choose a different name.'
+                );
+            }
+
+            if (name.endsWith('.')) {
+                return vscode.l10n.t('File name cannot end with a "." on Windows.');
+            }
+        } else {
+            if (UNIX_INVALID_FILE_CHARS.test(name)) {
+                return vscode.l10n.t('File name cannot contain "/" or "\\" characters on Unix-based systems.');
+            }
         }
 
         if (existingFileNames.has(name)) {
-            return vscode.l10n.t('{0} already exists.', name);
+            return vscode.l10n.t(
+                'A file or folder named "{0}" already exists in this location. Please choose a different name.',
+                name
+            );
         }
 
-        if (/^\s|\s$/.test(name)) {
-            return vscode.l10n.t('Leading or trailing whitespace detected in file or folder name.');
-        }
         return undefined;
     };
 }

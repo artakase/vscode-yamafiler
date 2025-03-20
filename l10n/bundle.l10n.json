@@ -1,14 +1,12 @@
 {
-  "There are only whitespace characters in the name.": "There are only whitespace characters in the name.",
-  "The name contains invalid characters.": "The name contains invalid characters.",
-  "Invalid file name on Windows.": "Invalid file name on Windows.",
-  "Reserved file name.": "Reserved file name.",
-  "The name cannot end with a \".\" on Windows.": "The name cannot end with a \".\" on Windows.",
-  "The name cannot end with a whitespace on Windows.": "The name cannot end with a whitespace on Windows.",
-  "The name is too long.": "The name is too long.",
-  "{0} already exists.": "{0} already exists.",
-  "Leading or trailing whitespace detected in file or folder name.": "Leading or trailing whitespace detected in file or folder name.",
-  "Could not read {0}: {1}": "Could not read {0}: {1}",
+  "File name cannot be empty or contain leading/trailing whitespace.": "File name cannot be empty or contain leading/trailing whitespace.",
+  "File names \".\" and \"..\" are reserved by the system and cannot be used.": "File names \".\" and \"..\" are reserved by the system and cannot be used.",
+  "File name is too long ({0} characters). Maximum allowed is 255 characters.": "File name is too long ({0} characters). Maximum allowed is 255 characters.",
+  "File name contains invalid characters ({0}) on Windows.": "File name contains invalid characters ({0}) on Windows.",
+  "File name is reserved by Windows (CON, PRN, AUX, etc.). Please choose a different name.": "File name is reserved by Windows (CON, PRN, AUX, etc.). Please choose a different name.",
+  "File name cannot end with a \".\" on Windows.": "File name cannot end with a \".\" on Windows.",
+  "File name cannot contain \"/\" or \"\\\" characters on Unix-based systems.": "File name cannot contain \"/\" or \"\\\" characters on Unix-based systems.",
+  "A file or folder named \"{0}\" already exists in this location. Please choose a different name.": "A file or folder named \"{0}\" already exists in this location. Please choose a different name.",
   "Could not create {0}: {1}": "Could not create {0}: {1}",
   "Could not rename {0} to {1}: {2}": "Could not rename {0} to {1}: {2}",
   "Could not copy {0} to {1}: {2}": "Could not copy {0} to {1}: {2}",
@@ -40,5 +38,6 @@
   "Edit path names. Save this tab manually to execute. Close this tab to cancel.": "Edit path names. Save this tab manually to execute. Close this tab to cancel.",
   "The line count does not match the file selection!": "The line count does not match the file selection!",
   "Invalid value at line {0}: {1}": "Invalid value at line {0}: {1}",
-  "Duplicated file names.": "Duplicated file names."
+  "Duplicated file names.": "Duplicated file names.",
+  "Could not read {0}: {1}": "Could not read {0}: {1}"
 }

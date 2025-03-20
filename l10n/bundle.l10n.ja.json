@@ -1,14 +1,12 @@
 {
-  "There are only whitespace characters in the name.": "空白のみのファイル名です。",
-  "The name contains invalid characters.": "名前に不適当な文字が含まれています。",
-  "Invalid file name on Windows.": "Windows で無効なファイル名です。",
-  "Reserved file name.": "予約されたファイル名です。",
-  "The name cannot end with a \".\" on Windows.": "Windowsでは名前が\".\"で終わることができません。",
-  "The name cannot end with a whitespace on Windows.": "Windows では名前の終わりに空白を使えません。",
-  "The name is too long.": "名前が長すぎます。",
-  "{0} already exists.": "{0} は既に存在します。",
-  "Leading or trailing whitespace detected in file or folder name.": "ファイルまたはフォルダ名の先頭または末尾に空白があります。",
-  "Could not read {0}: {1}": "{0} を読み取れません: {1}",
+  "File name cannot be empty or contain leading/trailing whitespace.": "ファイル名は空にできません。また、先頭や末尾に空白を含めることもできません。",
+  "File names \".\" and \"..\" are reserved by the system and cannot be used.": "ファイル名 \".\" および \"..\" はシステムで予約されており使用できません。",
+  "File name is too long ({0} characters). Maximum allowed is 255 characters.": "ファイル名が長すぎます ({0} 文字)。255文字以内にしてください。",
+  "File name contains invalid characters ({0}) on Windows.": "ファイル名に Windows で使用できない文字 ({0}) が含まれています。",
+  "File name is reserved by Windows (CON, PRN, AUX, etc.). Please choose a different name.": "ファイル名 (CON, PRN, AUX など) が Windows で予約されています。別の名前を使用してください。",
+  "File name cannot end with a \".\" on Windows.": "Windows ではファイル名の末尾にピリオド（\".\"）を使用できません。",
+  "File name cannot contain \"/\" or \"\\\" characters on Unix-based systems.": "Unix ベースのシステムではファイル名に\"/\"または\"\\\"を使用できません。",
+  "A file or folder named \"{0}\" already exists in this location. Please choose a different name.": "\"{0}\" という名前のファイルまたはフォルダーがこの場所に既に存在します。別の名前を使用してください。",
   "Could not create {0}: {1}": "{0} を作成できません: {1}",
   "Could not rename {0} to {1}: {2}": "{0} を {1} にリネームできません: {2}",
   "Could not copy {0} to {1}: {2}": "{0} を {1} にコピーできません: {2}",
@@ -40,5 +38,6 @@
   "Edit path names. Save this tab manually to execute. Close this tab to cancel.": "パス名を編集してください。実行するには手動で保存してください。中止するにはタブを閉じてください。",
   "The line count does not match the file selection!": "行数がファイル選択と異なります。",
   "Invalid value at line {0}: {1}": "行 {0} の値が無効です: {1}",
-  "Duplicated file names.": "重複したファイル名です。"
+  "Duplicated file names.": "重複したファイル名です。",
+  "Could not read {0}: {1}": "{0} を読み取れません: {1}"
 }
