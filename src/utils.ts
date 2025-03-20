@@ -1,36 +1,25 @@
-import {
-    FileStat,
-    Tab,
-    TabInputCustom,
-    TabInputNotebook,
-    TabInputNotebookDiff,
-    TabInputText,
-    TabInputTextDiff,
-    TextDocument,
-    TextEditor,
-    Uri,
-} from 'vscode';
+import * as vscode from 'vscode';
 
 export const YAMAFILER_SCHEME = 'yamafiler';
 export const YAMAFILER_LANGUAGE_ID = 'yamafiler';
 
 export interface FileItem {
-    readonly uri: Uri;
-    readonly stats: FileStat;
+    readonly uri: vscode.Uri;
+    readonly stats: vscode.FileStat;
     readonly isDirectory: boolean;
     readonly isSymbolicLink: boolean;
 }
 
 export interface FolderData {
-    readonly uri: Uri;
+    readonly uri: vscode.Uri;
     readonly files: FileItem[];
     readonly selectedIndexes: number[];
     shouldRefresh: boolean;
 }
 
 export interface Selection {
-    readonly editor: TextEditor;
-    readonly uri: Uri;
+    readonly editor: vscode.TextEditor;
+    readonly uri: vscode.Uri;
     readonly files: FileItem[];
     readonly cursored: FileItem | undefined;
     readonly folder: FolderData;
@@ -39,13 +28,13 @@ export interface Selection {
 
 export interface Clipboard {
     readonly mode: 'rename' | 'copy' | 'symlink';
-    readonly uri: Uri;
+    readonly uri: vscode.Uri;
     readonly files: FileItem[];
 }
 
 export interface BatchDocument {
     readonly mode: 'create' | 'rename' | 'copy' | 'symlink';
-    readonly doc: TextDocument;
+    readonly doc: vscode.TextDocument;
     readonly selection: Selection;
     isToClose: boolean;
 }
@@ -60,16 +49,16 @@ export function getMessage(err: unknown): string {
     }
 }
 
-export function getTabUri(tab: Tab | undefined): Uri | undefined {
+export function getTabUri(tab: vscode.Tab | undefined): vscode.Uri | undefined {
     if (!tab) {
         return undefined;
     } else if (
-        tab.input instanceof TabInputText ||
-        tab.input instanceof TabInputCustom ||
-        tab.input instanceof TabInputNotebook
+        tab.input instanceof vscode.TabInputText ||
+        tab.input instanceof vscode.TabInputCustom ||
+        tab.input instanceof vscode.TabInputNotebook
     ) {
         return tab.input.uri;
-    } else if (tab.input instanceof TabInputTextDiff || tab.input instanceof TabInputNotebookDiff) {
+    } else if (tab.input instanceof vscode.TabInputTextDiff || tab.input instanceof vscode.TabInputNotebookDiff) {
         return tab.input.modified;
     } else {
         return undefined;

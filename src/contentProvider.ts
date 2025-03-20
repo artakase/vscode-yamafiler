@@ -4,7 +4,6 @@ import * as path from 'path';
 import { filesize } from 'filesize';
 
 import * as vscode from 'vscode';
-import { Uri } from 'vscode';
 
 import { FileItem, FolderData, getMessage, YAMAFILER_SCHEME } from './utils';
 
@@ -35,26 +34,26 @@ function makeLine(file: FileItem, isSelected: boolean): string {
 }
 
 function tildify(p: string): string {
-    const relPath = path.relative(Uri.file(os.homedir()).path, Uri.file(p).path);
+    const relPath = path.relative(vscode.Uri.file(os.homedir()).path, vscode.Uri.file(p).path);
     if (relPath === '') {
         return '~';
     } else if (relPath.startsWith('..')) {
         return p;
     } else {
-        return `~${Uri.file(relPath).fsPath}`;
+        return `~${vscode.Uri.file(relPath).fsPath}`;
     }
 }
 
 export class YamafilerProvider implements vscode.TextDocumentContentProvider {
     readonly cachedFolders = new Map<string, FolderData>();
-    private readonly onDidChangeEmitter = new vscode.EventEmitter<Uri>();
+    private readonly onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
     readonly onDidChange = this.onDidChangeEmitter.event;
 
     dispose() {
         this.onDidChangeEmitter.dispose();
     }
 
-    async provideTextDocumentContent(uri: Uri): Promise<string | undefined> {
+    async provideTextDocumentContent(uri: vscode.Uri): Promise<string | undefined> {
         let folder: FolderData;
         try {
             folder = await this.readFolder(uri.with({ scheme: 'file' }));
@@ -70,14 +69,14 @@ export class YamafilerProvider implements vscode.TextDocumentContentProvider {
         return [header].concat(folder.files.map((file, index) => makeLine(file, setSelection.has(index)))).join('\n');
     }
 
-    private async readFolder(uri: Uri): Promise<FolderData> {
+    private async readFolder(uri: vscode.Uri): Promise<FolderData> {
         const cachedFolder = this.cachedFolders.get(uri.fsPath);
         if (cachedFolder?.shouldRefresh === false) {
             return cachedFolder;
         }
         const files: FileItem[] = [];
         for (const [filename, filetype] of await vscode.workspace.fs.readDirectory(uri)) {
-            const fileUri = Uri.joinPath(uri, filename);
+            const fileUri = vscode.Uri.joinPath(uri, filename);
             try {
                 const stats = await vscode.workspace.fs.stat(fileUri);
                 files.push({
@@ -107,7 +106,7 @@ export class YamafilerProvider implements vscode.TextDocumentContentProvider {
         return resultFolder;
     }
 
-    emitChange(uri: Uri, resetSelection = false): void {
+    emitChange(uri: vscode.Uri, resetSelection = false): void {
         const cachedFolder = this.cachedFolders.get(uri.fsPath);
         if (cachedFolder) {
             cachedFolder.shouldRefresh = true;

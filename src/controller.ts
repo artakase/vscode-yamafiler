@@ -6,7 +6,6 @@ import * as process from 'process';
 import { minimatch } from 'minimatch';
 
 import * as vscode from 'vscode';
-import { Uri } from 'vscode';
 
 import { YamafilerProvider } from './contentProvider';
 import * as edition from './edition';
@@ -27,7 +26,7 @@ export class Controller {
     readonly provider;
     private clipboard: Clipboard | undefined;
     private batch: BatchDocument | undefined;
-    private tmpDirUri: Uri | undefined;
+    private tmpDirUri: vscode.Uri | undefined;
 
     constructor(private readonly context: vscode.ExtensionContext) {
         this.provider = new YamafilerProvider();
@@ -76,7 +75,7 @@ export class Controller {
         });
     }
 
-    private async showFiler(uri: Uri, column: 'active' | 'beside' = 'active'): Promise<void> {
+    private async showFiler(uri: vscode.Uri, column: 'active' | 'beside' = 'active'): Promise<void> {
         const yamafilerUri = uri.with({ scheme: YAMAFILER_SCHEME });
         const doc = await vscode.workspace.openTextDocument(yamafilerUri);
         if (doc.lineAt(0).isEmptyOrWhitespace) {
@@ -114,9 +113,9 @@ export class Controller {
     } = {}): Promise<void> {
         const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri;
         const activeUri = getTabUri(vscode.window.tabGroups.activeTabGroup.activeTab);
-        const homeUri = Uri.file(os.homedir());
+        const homeUri = vscode.Uri.file(os.homedir());
 
-        let uriToOpen: Uri;
+        let uriToOpen: vscode.Uri;
         if (ask === 'dialog') {
             const uris = await vscode.window.showOpenDialog({
                 canSelectFiles: false,
@@ -130,13 +129,13 @@ export class Controller {
         } else if (path === '~') {
             uriToOpen = homeUri;
         } else if (path.startsWith('~/')) {
-            uriToOpen = Uri.joinPath(homeUri, path.substring(2));
+            uriToOpen = vscode.Uri.joinPath(homeUri, path.substring(2));
         } else if (path === '${workspaceFolder}' && workspaceUri) {
             uriToOpen = workspaceUri;
         } else if (path.startsWith('${workspaceFolder}/') && workspaceUri) {
-            uriToOpen = Uri.joinPath(workspaceUri, path.substring(19));
+            uriToOpen = vscode.Uri.joinPath(workspaceUri, path.substring(19));
         } else if (path !== '' && !path.startsWith('${workspaceFolder}')) {
-            uriToOpen = Uri.file(path);
+            uriToOpen = vscode.Uri.file(path);
         } else if (activeUri?.scheme === YAMAFILER_SCHEME) {
             if (column === 'active') {
                 this.refresh();
@@ -148,7 +147,7 @@ export class Controller {
             let activeFile = activeUri;
             if (resolveSymlinks) {
                 try {
-                    activeFile = Uri.file(fs.realpathSync.native(activeFile.fsPath));
+                    activeFile = vscode.Uri.file(fs.realpathSync.native(activeFile.fsPath));
                 } catch (e) {
                     vscode.window.showErrorMessage(
                         vscode.l10n.t('Could not resolve {0}: {1}', activeFile.fsPath, getMessage(e))
@@ -156,7 +155,7 @@ export class Controller {
                     return;
                 }
             }
-            uriToOpen = Uri.joinPath(activeFile, '..');
+            uriToOpen = vscode.Uri.joinPath(activeFile, '..');
         } else if (workspaceUri) {
             uriToOpen = workspaceUri;
         } else {
@@ -164,7 +163,7 @@ export class Controller {
         }
         if (resolveSymlinks) {
             try {
-                uriToOpen = Uri.file(fs.realpathSync.native(uriToOpen.fsPath));
+                uriToOpen = vscode.Uri.file(fs.realpathSync.native(uriToOpen.fsPath));
             } catch (e) {
                 vscode.window.showErrorMessage(
                     vscode.l10n.t('Could not resolve {0}: {1}', uriToOpen.fsPath, getMessage(e))
@@ -200,7 +199,7 @@ export class Controller {
         let uriToOpen = cursored.uri;
         if (resolveSymlinks) {
             try {
-                uriToOpen = Uri.file(fs.realpathSync.native(uriToOpen.fsPath));
+                uriToOpen = vscode.Uri.file(fs.realpathSync.native(uriToOpen.fsPath));
             } catch (e) {
                 vscode.window.showErrorMessage(
                     vscode.l10n.t('Could not resolve {0}: {1}', uriToOpen.fsPath, getMessage(e))
@@ -258,7 +257,7 @@ export class Controller {
     goToParent(): void {
         const uri = vscode.window.activeTextEditor?.document.uri;
         if (uri?.scheme === YAMAFILER_SCHEME) {
-            void this.showFiler(Uri.file(path.join(uri.fsPath, '..')), 'active');
+            void this.showFiler(vscode.Uri.file(path.join(uri.fsPath, '..')), 'active');
         }
     }
 
@@ -280,7 +279,7 @@ export class Controller {
         let uriToOpen = cursored.uri;
         if (resolveSymlinks) {
             try {
-                uriToOpen = Uri.file(fs.realpathSync.native(uriToOpen.fsPath));
+                uriToOpen = vscode.Uri.file(fs.realpathSync.native(uriToOpen.fsPath));
             } catch (e) {
                 vscode.window.showErrorMessage(
                     vscode.l10n.t('Could not resolve {0}: {1}', uriToOpen.fsPath, getMessage(e))
@@ -301,12 +300,12 @@ export class Controller {
         if (!files || files.length === 0) {
             return;
         }
-        let uris: { uri: Uri }[];
+        let uris: { uri: vscode.Uri }[];
         if (resolveSymlinks) {
             uris = [];
             for (const file of files) {
                 try {
-                    uris.push({ uri: Uri.file(fs.realpathSync.native(file.uri.fsPath)) });
+                    uris.push({ uri: vscode.Uri.file(fs.realpathSync.native(file.uri.fsPath)) });
                 } catch (e) {
                     vscode.window.showErrorMessage(
                         vscode.l10n.t('Could not resolve {0}: {1}', file.uri.fsPath, getMessage(e))
@@ -340,7 +339,7 @@ export class Controller {
             validateInput: makeValidator(selection.fileBases),
         });
         if (newBase) {
-            const uri = Uri.joinPath(selection.uri, newBase);
+            const uri = vscode.Uri.joinPath(selection.uri, newBase);
             let result: edition.Result;
             if (isDirectory) {
                 result = await edition.createDirectory(uri);
@@ -384,7 +383,7 @@ export class Controller {
             validateInput: makeValidator(selection.fileBases),
         });
         if (newBase) {
-            const uri = Uri.joinPath(selection.uri, newBase);
+            const uri = vscode.Uri.joinPath(selection.uri, newBase);
             let result: edition.Result;
             if (mode === 'rename') {
                 result = await edition.rename(file.uri, uri);
@@ -473,7 +472,7 @@ export class Controller {
         for (const file of this.clipboard.files) {
             const oldUri = file.uri;
             const relPath = path.relative(this.clipboard.uri.fsPath, oldUri.fsPath);
-            const newUri = Uri.joinPath(selection.uri, relPath);
+            const newUri = vscode.Uri.joinPath(selection.uri, relPath);
             if (this.clipboard.mode === 'rename') {
                 promises.push(edition.rename(oldUri, newUri, { overwrite: false }));
             } else if (this.clipboard.mode === 'copy') {
@@ -483,7 +482,7 @@ export class Controller {
             }
         }
         const results = await Promise.all(promises);
-        const existUris: Uri[] = [];
+        const existUris: vscode.Uri[] = [];
         let containsDirectory = false;
         for (const [index, result] of results.entries()) {
             if (result.error) {
@@ -528,10 +527,15 @@ export class Controller {
             for (const uri of existUris) {
                 const baseName = path.basename(uri.path);
                 if (this.clipboard.mode === 'rename') {
-                    promises.push(edition.rename(uri, Uri.joinPath(rootUri, baseName), { overwrite: overwrite }));
+                    promises.push(
+                        edition.rename(uri, vscode.Uri.joinPath(rootUri, baseName), { overwrite: overwrite })
+                    );
                 } else if (this.clipboard.mode === 'copy') {
                     promises.push(
-                        edition.copy(uri, Uri.joinPath(rootUri, baseName), { overwrite: overwrite, merge: merge })
+                        edition.copy(uri, vscode.Uri.joinPath(rootUri, baseName), {
+                            overwrite: overwrite,
+                            merge: merge,
+                        })
                     );
                 }
             }
@@ -646,9 +650,9 @@ export class Controller {
             void vscode.window.showErrorMessage(vscode.l10n.t('Batch already exists. Please save or cancel it first.'));
             return;
         }
-        this.tmpDirUri ??= Uri.file(fs.mkdtempSync(path.join(os.tmpdir(), 'yamafiler-')));
-        const originalFileUri = Uri.joinPath(this.tmpDirUri, '.Original.yamafiler-batch');
-        const batchFileUri = Uri.joinPath(this.tmpDirUri, '.FileNames.yamafiler-batch');
+        this.tmpDirUri ??= vscode.Uri.file(fs.mkdtempSync(path.join(os.tmpdir(), 'yamafiler-')));
+        const originalFileUri = vscode.Uri.joinPath(this.tmpDirUri, '.Original.yamafiler-batch');
+        const batchFileUri = vscode.Uri.joinPath(this.tmpDirUri, '.FileNames.yamafiler-batch');
         if (mode === 'create') {
             await vscode.workspace.fs.writeFile(batchFileUri, new Uint8Array());
         } else {
@@ -727,8 +731,8 @@ export class Controller {
         }
 
         const newFileNameSet = new Set<string>();
-        const createUris: [Uri, boolean][] = [];
-        const moveUris: [Uri, Uri][] = [];
+        const createUris: [vscode.Uri, boolean][] = [];
+        const moveUris: [vscode.Uri, vscode.Uri][] = [];
         for (let i = 0; i < batchLineCount; i++) {
             let newBase = batch.doc.lineAt(i).text;
             const isDirectory = batch.mode === 'create' ? newBase.endsWith('/') : batch.selection.files[i].isDirectory;
@@ -743,7 +747,7 @@ export class Controller {
                 return;
             }
             newFileNameSet.add(newBase);
-            const newUri = Uri.joinPath(this.batch.selection.uri, newBase);
+            const newUri = vscode.Uri.joinPath(this.batch.selection.uri, newBase);
             if (batch.mode === 'create') {
                 createUris.push([newUri, isDirectory]);
             } else {
