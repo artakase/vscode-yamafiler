@@ -5,7 +5,7 @@ import { filesize } from 'filesize';
 
 import * as vscode from 'vscode';
 
-import { DirView, FileEntry, getErrorMessage, IS_WINDOWS, YAMAFILER_SCHEME } from './utils';
+import { DirView, FileEntry, getErrorMessage, IS_WINDOWS, normalizePath, YAMAFILER_SCHEME } from './utils';
 
 export function compareFileSystemEntries(entryA: FileEntry, entryB: FileEntry): number {
     const dirOrder = (entryA.isDir ? 0 : 1) - (entryB.isDir ? 0 : 1);
@@ -114,7 +114,7 @@ export class YamafilerContentProvider implements vscode.TextDocumentContentProvi
     }
 
     private async loadDirContents(uri: vscode.Uri): Promise<DirView> {
-        const cachedDirView = this.cachedDirViews.get(uri.fsPath);
+        const cachedDirView = this.cachedDirViews.get(normalizePath(uri.fsPath));
         if (cachedDirView?.needsRefresh === false) {
             return cachedDirView;
         }
@@ -139,9 +139,9 @@ export class YamafilerContentProvider implements vscode.TextDocumentContentProvi
         entries.sort(compareFileSystemEntries);
         const asteriskedIndices: number[] = [];
         if (cachedDirView) {
-            const uriPathToIndexMap = new Map(entries.map((entry, index) => [entry.uri.fsPath, index]));
+            const uriPathToIndexMap = new Map(entries.map((entry, index) => [normalizePath(entry.uri.fsPath), index]));
             for (const cachedEntryIndex of cachedDirView.asteriskedIndices) {
-                const path = cachedDirView.entries[cachedEntryIndex].uri.fsPath;
+                const path = normalizePath(cachedDirView.entries[cachedEntryIndex].uri.fsPath);
                 const currentEntryIndex = uriPathToIndexMap.get(path);
                 if (currentEntryIndex !== undefined) {
                     asteriskedIndices.push(currentEntryIndex);
@@ -149,12 +149,12 @@ export class YamafilerContentProvider implements vscode.TextDocumentContentProvi
             }
         }
         const refreshedDirView = { uri, entries, asteriskedIndices, needsRefresh: false };
-        this.cachedDirViews.set(uri.fsPath, refreshedDirView);
+        this.cachedDirViews.set(normalizePath(uri.fsPath), refreshedDirView);
         return refreshedDirView;
     }
 
     emitChange(uri: vscode.Uri, clearAsterisks = false): void {
-        const cachedDirView = this.cachedDirViews.get(uri.fsPath);
+        const cachedDirView = this.cachedDirViews.get(normalizePath(uri.fsPath));
         if (cachedDirView) {
             cachedDirView.needsRefresh = true;
             if (clearAsterisks) {

@@ -8,7 +8,7 @@
 
 import * as vscode from 'vscode';
 
-import { IS_WINDOWS } from './utils';
+import { IS_WINDOWS, normalizePath } from './utils';
 
 // Reference: https://en.wikipedia.org/wiki/Filename
 const WINDOWS_INVALID_FILE_CHARS = /[\\/:*?"<>|]/;
@@ -55,7 +55,7 @@ export function makeValidator(
             }
         }
 
-        if (existingFileNames.has(name)) {
+        if (existingFileNames.has(normalizePath(name))) {
             return vscode.l10n.t(
                 'A file or folder named "{0}" already exists in this location. Please choose a different name.',
                 name

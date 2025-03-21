@@ -66,3 +66,11 @@ export function getUriFromTab(tab: vscode.Tab | undefined): vscode.Uri | undefin
         return undefined;
     }
 }
+
+export function normalizePath(path: string): string {
+    if (IS_MACINTOSH || IS_WINDOWS) {
+        return path.toLowerCase();
+    } else {
+        return path;
+    }
+}

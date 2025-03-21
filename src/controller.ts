@@ -15,6 +15,7 @@ import {
     getUriFromTab,
     IS_WINDOWS,
     NavigationContext,
+    normalizePath,
     PendingFileOperation,
     YAMAFILER_LANGUAGE_ID,
     YAMAFILER_SCHEME,
@@ -60,11 +61,11 @@ export class Controller {
         for (const tab of event.closed) {
             const uri = getUriFromTab(tab);
             if (uri?.scheme === YAMAFILER_SCHEME) {
-                closedViewPaths.add(uri.fsPath);
+                closedViewPaths.add(normalizePath(uri.fsPath));
             } else if (
                 uri &&
                 this.currentBatchOperation &&
-                this.currentBatchOperation.batchDocument.uri.fsPath === uri.fsPath
+                normalizePath(this.currentBatchOperation.batchDocument.uri.fsPath) === normalizePath(uri.fsPath)
             ) {
                 this.currentBatchOperation = undefined;
             }
@@ -77,7 +78,7 @@ export class Controller {
             for (const tab of tabGroup.tabs) {
                 const tabUri = getUriFromTab(tab);
                 if (tabUri?.scheme === YAMAFILER_SCHEME) {
-                    remainingViewPaths.add(tabUri.fsPath);
+                    remainingViewPaths.add(normalizePath(tabUri.fsPath));
                 }
             }
         }
@@ -576,7 +577,7 @@ export class Controller {
             return undefined;
         }
         const currentDirUri = yamafilerUri.with({ scheme: 'file' });
-        const cachedDirView = this.contentProvider.cachedDirViews.get(currentDirUri.fsPath);
+        const cachedDirView = this.contentProvider.cachedDirViews.get(normalizePath(currentDirUri.fsPath));
         if (!cachedDirView) {
             void vscode.window
                 .showErrorMessage(
@@ -603,7 +604,7 @@ export class Controller {
                 selectedEntries.push(entry);
             }
             if (fileNameFilterMode === 'all' || !asteriskedIndexSet.has(index)) {
-                existingFileNames.add(path.basename(entry.uri.path));
+                existingFileNames.add(normalizePath(path.basename(entry.uri.path)));
             }
         }
         if (selectedEntries.length === 0) {
@@ -748,7 +749,7 @@ export class Controller {
                 );
                 return;
             }
-            uniqueFileNameSet.add(newBaseName);
+            uniqueFileNameSet.add(normalizePath(newBaseName));
             const newUri = vscode.Uri.joinPath(this.currentBatchOperation.navigationContext.currentDirUri, newBaseName);
             if (operationType === 'create') {
                 fileCreationEntries.push([newUri, isDir]);
@@ -796,7 +797,11 @@ export class Controller {
         if (document === this.currentBatchOperation.batchDocument) {
             const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
             const tabPath = getUriFromTab(activeTab)?.fsPath;
-            if (activeTab && tabPath && tabPath === this.currentBatchOperation.batchDocument.uri.fsPath) {
+            if (
+                activeTab &&
+                tabPath &&
+                normalizePath(tabPath) === normalizePath(this.currentBatchOperation.batchDocument.uri.fsPath)
+            ) {
                 void vscode.window.tabGroups.close(activeTab);
             }
         }
