@@ -67,7 +67,7 @@ export function createFile(uri: vscode.Uri): Promise<Result> {
     function formatErrorMessage(errorMessage: string) {
         return vscode.l10n.t('Could not create {0}: {1}', uri.fsPath, errorMessage);
     }
-    return resolveResult(vscode.workspace.fs.writeFile(uri, new Uint8Array()), formatErrorMessage);
+    return resolveResult(fsPromises.writeFile(uri.fsPath, '', { flag: 'wx' }), formatErrorMessage);
 }
 
 export function rename(
