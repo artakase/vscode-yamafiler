@@ -376,7 +376,7 @@ export class Controller {
 
     async delete({ useTrash = true }: { useTrash?: boolean } = {}): Promise<void> {
         const context = this.getCurrentNavigationContext();
-        if (!context || context.selectedEntries.length == 0) {
+        if (!context || context.selectedEntries.length === 0) {
             return;
         }
         const selectedEntryPaths = context.selectedEntries.map((entry) => entry.uri.fsPath).join('\n');
@@ -393,22 +393,15 @@ export class Controller {
                 context.selectedEntries.map((entry) => edition.delete(entry.uri, { recursive: true, useTrash }))
             );
             const success: string[] = [];
-            const failure: edition.Result[] = [];
+            const failure: edition.FailureResult[] = [];
             for (const [index, result] of operationResults.entries()) {
                 if (result.error) {
-                    console.error(result.error);
                     failure.push(result);
                 } else {
-                    success.push(selectedEntryPaths[index]);
+                    success.push(context.selectedEntries[index].uri.fsPath);
                 }
             }
-            if (failure.length > 0) {
-                if (failure[0].message) {
-                    void vscode.window.showErrorMessage(failure[0].message);
-                } else {
-                    void vscode.window.showErrorMessage('failure');
-                }
-            }
+            edition.showAndLogErrors(failure);
             if (success.length > 0) {
                 void vscode.window.showInformationMessage(
                     vscode.l10n.t('Successfully deleted {0} items.', success.length)
@@ -530,16 +523,7 @@ export class Controller {
                 }
             }
             const operationResults = await Promise.all(promises);
-            let hasError = false;
-            operationResults.forEach((result) => {
-                if (result.error) {
-                    if (!hasError) {
-                        void vscode.window.showErrorMessage(result.message);
-                        hasError = true;
-                    }
-                    console.error(result.error);
-                }
-            });
+            edition.showAndLogErrors(operationResults);
         }
 
         this.pendingFileOperation = undefined;
@@ -818,18 +802,9 @@ export class Controller {
             });
         }
         const operationResults = await Promise.all(operationPromises);
-        let hasError = false;
-        operationResults.forEach((result) => {
-            if (result.error) {
-                if (!hasError) {
-                    void vscode.window.showErrorMessage(result.message);
-                    hasError = true;
-                }
-                console.error(result.error);
-            }
-        });
-        this.currentBatchOperation.hasCompleted = true;
+        edition.showAndLogErrors(operationResults);
 
+        this.currentBatchOperation.hasCompleted = true;
         this.contentProvider.emitChange(batchOperation.navigationContext.currentDirUri, true);
     }
 

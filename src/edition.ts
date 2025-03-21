@@ -2,9 +2,33 @@ import * as fsPromises from 'fs/promises';
 
 import * as vscode from 'vscode';
 
-export type Result<T = void> =
-    | { value: T; error: undefined; message: undefined }
-    | { value: undefined; error: Error; message: string };
+export interface SuccessResult<T> {
+    value: T;
+    error: undefined;
+    message: undefined;
+}
+
+export interface FailureResult {
+    value: undefined;
+    error: Error;
+    message: string;
+}
+
+export type Result<T = void> = SuccessResult<T> | FailureResult;
+
+function normalizeError(error: unknown): Error {
+    if (error instanceof vscode.FileSystemError) {
+        return error;
+    } else if (error instanceof Error) {
+        if (error.name === 'SystemError' && error.message.startsWith('Target already exists:')) {
+            return vscode.FileSystemError.FileExists(error.message);
+        }
+        return error;
+    } else if (error instanceof Object) {
+        return new Error(error.toString());
+    }
+    return new Error('Unknown error.');
+}
 
 async function resolveResult<T>(
     operation: Thenable<T>,
@@ -13,23 +37,22 @@ async function resolveResult<T>(
     try {
         return { value: await operation, error: undefined, message: undefined };
     } catch (originalError) {
-        const value = undefined;
-        let error: Error;
-        if (originalError instanceof vscode.FileSystemError) {
-            error = originalError;
-        } else if (originalError instanceof Error) {
-            if (originalError.name === 'SystemError' && originalError.message.startsWith('Target already exists:')) {
-                error = vscode.FileSystemError.FileExists(originalError.message);
-            } else {
-                error = originalError;
-            }
-        } else if (originalError instanceof Object) {
-            error = Error(originalError.toString());
-        } else {
-            error = Error('Unknown error.');
-        }
+        const error = normalizeError(originalError);
         const message = formatErrorMessage(error.message);
-        return { value, error, message };
+        return { value: undefined, error, message };
+    }
+}
+
+export function showAndLogErrors(results: Result[]) {
+    let hasError = false;
+    for (const error of results) {
+        if (error.error) {
+            if (!hasError) {
+                hasError = true;
+                void vscode.window.showErrorMessage(error.message);
+            }
+            console.error(error.message);
+        }
     }
 }
 
