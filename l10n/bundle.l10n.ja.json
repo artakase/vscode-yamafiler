@@ -34,6 +34,7 @@
   "Skip": "スキップ",
   "File already exists. Overwrite?": "ファイルが既に存在します。上書きしますか？",
   "Cache not found. Please refresh to rebuild the cache.": "キャッシュが見つかりません。キャッシュを再構築するために更新してください。",
+  "Refresh": "更新",
   "A batch operation is already in progress. Please finish or cancel it before starting a new one.": "バッチ操作がすでに進行中です。新しい操作を開始する前に、現在の操作を終了するかキャンセルしてください。",
   "Enter one filename per line. Add a trailing \"/\" to create folders. Save to create files or close to cancel.": "1行に1つのファイル名を入力してください。フォルダーを作成するには末尾に \"/\" を追加してください。ファイルを作成するには保存してください。キャンセルするには閉じてください。",
   "Edit filenames in the right panel. Save to apply changes or close to cancel.": "右側のパネルでファイル名を編集してください。変更を適用するには保存してください。キャンセルするには閉じてください。",

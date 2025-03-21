@@ -583,7 +583,16 @@ export class Controller {
         const currentDirUri = yamafilerUri.with({ scheme: 'file' });
         const cachedDirView = this.contentProvider.cachedDirViews.get(currentDirUri.fsPath);
         if (!cachedDirView) {
-            void vscode.window.showErrorMessage(vscode.l10n.t('Cache not found. Please refresh to rebuild the cache.'));
+            void vscode.window
+                .showErrorMessage(
+                    vscode.l10n.t('Cache not found. Please refresh to rebuild the cache.'),
+                    vscode.l10n.t('Refresh')
+                )
+                .then((selection) => {
+                    if (selection === vscode.l10n.t('Refresh')) {
+                        this.refresh();
+                    }
+                });
             return undefined;
         }
         const cursorLineNumber = activeEditor.selection.active.line;

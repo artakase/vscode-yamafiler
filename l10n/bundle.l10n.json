@@ -34,6 +34,7 @@
   "Skip": "Skip",
   "File already exists. Overwrite?": "File already exists. Overwrite?",
   "Cache not found. Please refresh to rebuild the cache.": "Cache not found. Please refresh to rebuild the cache.",
+  "Refresh": "Refresh",
   "A batch operation is already in progress. Please finish or cancel it before starting a new one.": "A batch operation is already in progress. Please finish or cancel it before starting a new one.",
   "Enter one filename per line. Add a trailing \"/\" to create folders. Save to create files or close to cancel.": "Enter one filename per line. Add a trailing \"/\" to create folders. Save to create files or close to cancel.",
   "Edit filenames in the right panel. Save to apply changes or close to cancel.": "Edit filenames in the right panel. Save to apply changes or close to cancel.",
