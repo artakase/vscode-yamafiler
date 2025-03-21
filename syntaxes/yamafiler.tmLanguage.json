@@ -7,39 +7,41 @@
   ],
   "repository": {
     "header": {
+      "comment": "Directory path header displayed at the top of the filer view",
       "name": "markup.heading.yamafiler",
       "match": "\\A.*$"
     },
     "entryline": {
       "patterns": [
         {
-          "comment": "Line of filer.",
-          "name": "meta.entryline.yamfiler",
-          "match": "^[* ] (.{9}) (.{11}) (.+/$)?",
+          "comment": "Line of filer entry. Format: [* ] {size} {modified time} {filename}/ where * = selected",
+          "name": "meta.line.entry.yamafiler",
+          "match": "^[* ] (.{9}) (.{11}) (?:(.+/$)|(.+$))?",
           "captures": {
             "1": { "name": "variable.filesize.yamafiler" },
             "2": { "name": "string.time.yamafiler" },
-            "3": { "name": "keyword.foldername.yamafiler" }
+            "3": { "name": "entity.name.tag.directory.yamafiler" },
+            "4": { "name": "entity.name.file.yamafiler" }
           }
         },
         {
           "comment": "Line of symbolic link.",
-          "name": "meta.linkline.yamfiler",
+          "name": "meta.line.symlink.yamafiler",
           "match": "^[* ]L(.{9}) (.{11}) (.+$)",
           "captures": {
             "1": { "name": "variable.filesize.yamafiler" },
             "2": { "name": "string.time.yamafiler" },
-            "3": { "name": "variable.linkname.yamafiler" }
+            "3": { "name": "entity.name.variable.symlink.yamafiler" }
           }
         },
         {
           "comment": "Line of broken symbolic link.",
-          "name": "meta.brokenlink.yamfiler",
+          "name": "meta.line.broken.symlink.yamafiler",
           "match": "^[* ]l(.{9}) (.{11}) (.+$)",
           "captures": {
             "1": { "name": "variable.filesize.yamafiler" },
             "2": { "name": "string.time.yamafiler" },
-            "3": { "name": "invalid.brokenlink.yamafiler" }
+            "3": { "name": "invalid.broken.symlink.yamafiler" }
           }
         }
       ]
