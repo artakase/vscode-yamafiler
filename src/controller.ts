@@ -665,45 +665,35 @@ export class Controller {
                     'Enter one filename per line. Add a trailing "/" to create folders. Save to create files or close to cancel.'
                 )
             );
-        } else if (operationType === 'rename') {
-            void vscode.commands.executeCommand(
-                'vscode.diff',
-                originalNamesFileUri,
-                editableNamesFileUri,
-                'Old Names ↔ New Names',
-                {
-                    preview: false,
-                }
-            );
-            void vscode.window.showInformationMessage(
-                vscode.l10n.t('Edit filenames in the right panel. Save to apply changes or close to cancel.')
-            );
-        } else if (operationType === 'copy') {
-            void vscode.commands.executeCommand(
-                'vscode.diff',
-                originalNamesFileUri,
-                editableNamesFileUri,
-                'Source Names ↔ Dest Names',
-                {
-                    preview: false,
-                }
-            );
-            void vscode.window.showInformationMessage(
-                vscode.l10n.t('Edit destination filenames in the right panel. Save to copy files or close to cancel.')
-            );
         } else {
+            const operationMessages = {
+                rename: {
+                    title: 'Old Names ↔ New Names',
+                    message: vscode.l10n.t(
+                        'Edit filenames in the right panel. Save to apply changes or close to cancel.'
+                    ),
+                },
+                copy: {
+                    title: 'Source Names ↔ Destination Names',
+                    message: vscode.l10n.t(
+                        'Edit destination filenames in the right panel. Save to copy files or close to cancel.'
+                    ),
+                },
+                symlink: {
+                    title: 'Target Names ↔ Link Names',
+                    message: vscode.l10n.t(
+                        'Edit link names in the right panel. Save to create symlinks or close to cancel.'
+                    ),
+                },
+            };
             void vscode.commands.executeCommand(
                 'vscode.diff',
                 originalNamesFileUri,
                 editableNamesFileUri,
-                'Target Names ↔ Path Names',
-                {
-                    preview: false,
-                }
+                operationMessages[operationType].title,
+                { preview: false }
             );
-            void vscode.window.showInformationMessage(
-                vscode.l10n.t('Edit link names in the right panel. Save to create symlinks or close to cancel.')
-            );
+            void vscode.window.showInformationMessage(operationMessages[operationType].message);
         }
         this.currentBatchOperation = {
             operationType: operationType,
@@ -725,17 +715,13 @@ export class Controller {
         }
 
         const fileNameValidator = makeValidator(batchOperation.navigationContext.existingFileNames);
-
+        const operationType = batchOperation.operationType;
         const documentLineCount = batchOperation.batchDocument.lineAt(batchOperation.batchDocument.lineCount - 1)
             .isEmptyOrWhitespace
             ? batchOperation.batchDocument.lineCount - 1
             : batchOperation.batchDocument.lineCount;
 
-        if (
-            batchOperation.operationType === 'rename' ||
-            batchOperation.operationType === 'copy' ||
-            batchOperation.operationType === 'symlink'
-        ) {
+        if (operationType !== 'create') {
             if (documentLineCount !== batchOperation.navigationContext.selectedEntries.length) {
                 void vscode.window.showErrorMessage(
                     vscode.l10n.t(
@@ -754,7 +740,7 @@ export class Controller {
         for (let i = 0; i < documentLineCount; i++) {
             let newBaseName = batchOperation.batchDocument.lineAt(i).text;
             const isDir =
-                batchOperation.operationType === 'create'
+                operationType === 'create'
                     ? newBaseName.endsWith('/')
                     : batchOperation.navigationContext.selectedEntries[i].isDir;
             if (newBaseName.endsWith('/')) {
@@ -769,7 +755,7 @@ export class Controller {
             }
             uniqueFileNameSet.add(newBaseName);
             const newUri = vscode.Uri.joinPath(this.currentBatchOperation.navigationContext.currentDirUri, newBaseName);
-            if (batchOperation.operationType === 'create') {
+            if (operationType === 'create') {
                 fileCreationEntries.push([newUri, isDir]);
             } else {
                 sourceDestUriPairs.push([batchOperation.navigationContext.selectedEntries[i].uri, newUri]);
@@ -782,24 +768,24 @@ export class Controller {
             return;
         }
         const operationPromises: Promise<edition.Result>[] = [];
-        if (batchOperation.operationType === 'create') {
-            fileCreationEntries.forEach(([newUri, isDir]) => {
+        if (operationType === 'create') {
+            for (const [newUri, isDir] of fileCreationEntries) {
                 if (isDir) {
                     operationPromises.push(edition.createDir(newUri));
                 } else {
                     operationPromises.push(edition.createFile(newUri));
                 }
-            });
+            }
         } else {
-            sourceDestUriPairs.forEach(([oldUri, newUri]) => {
-                if (batchOperation.operationType === 'rename') {
+            for (const [oldUri, newUri] of sourceDestUriPairs) {
+                if (operationType === 'rename') {
                     operationPromises.push(edition.rename(oldUri, newUri));
-                } else if (batchOperation.operationType === 'copy') {
+                } else if (operationType === 'copy') {
                     operationPromises.push(edition.copy(oldUri, newUri));
-                } else if (batchOperation.operationType === 'symlink') {
+                } else {
                     operationPromises.push(edition.symlink(oldUri, newUri));
                 }
-            });
+            }
         }
         const operationResults = await Promise.all(operationPromises);
         edition.showAndLogErrors(operationResults);
@@ -809,17 +795,17 @@ export class Controller {
     }
 
     finalizeBatchOperation(document: vscode.TextDocument): void {
-        const batch = this.currentBatchOperation;
-        if (!this.currentBatchOperation || document !== batch?.batchDocument || !batch.hasCompleted) {
+        if (!this.currentBatchOperation?.hasCompleted) {
             return;
         }
-        const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
-        if (activeTab?.input instanceof vscode.TabInputText || activeTab?.input instanceof vscode.TabInputTextDiff) {
+        if (document === this.currentBatchOperation.batchDocument) {
+            const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
             const tabPath = getUriFromTab(activeTab)?.fsPath;
-            if (tabPath && path.relative(tabPath, batch.batchDocument.uri.fsPath) === '') {
+            if (activeTab && tabPath && tabPath === this.currentBatchOperation.batchDocument.uri.fsPath) {
                 void vscode.window.tabGroups.close(activeTab);
             }
         }
+
         this.currentBatchOperation = undefined;
     }
 }
