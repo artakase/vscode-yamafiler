@@ -57,40 +57,35 @@ export class Controller {
 
     cleanupClosedViewsFromCache(event: vscode.TabChangeEvent): void {
         const closedViewPaths = new Set<string>();
-        event.closed.forEach((tab) => {
+        for (const tab of event.closed) {
             const uri = getUriFromTab(tab);
             if (uri?.scheme === YAMAFILER_SCHEME) {
                 closedViewPaths.add(uri.fsPath);
             } else if (
-                uri?.fsPath &&
+                uri &&
                 this.currentBatchOperation &&
-                path.relative(uri.fsPath, this.currentBatchOperation.batchDocument.uri.fsPath) === ''
+                this.currentBatchOperation.batchDocument.uri.fsPath === uri.fsPath
             ) {
                 this.currentBatchOperation = undefined;
             }
-        });
+        }
         if (closedViewPaths.size === 0) {
             return;
         }
         const remainingViewPaths = new Set<string>();
-        vscode.window.tabGroups.all.forEach((tabGroup) => {
-            tabGroup.tabs.forEach((tab) => {
+        for (const tabGroup of vscode.window.tabGroups.all) {
+            for (const tab of tabGroup.tabs) {
                 const tabUri = getUriFromTab(tab);
                 if (tabUri?.scheme === YAMAFILER_SCHEME) {
                     remainingViewPaths.add(tabUri.fsPath);
                 }
-            });
-        });
-        if (this.currentBatchOperation) {
-            if (!remainingViewPaths.has(this.currentBatchOperation.batchDocument.uri.fsPath)) {
-                this.currentBatchOperation = undefined;
             }
         }
-        closedViewPaths.forEach((closedPath) => {
+        for (const closedPath of closedViewPaths) {
             if (!remainingViewPaths.has(closedPath)) {
                 this.contentProvider.cachedDirViews.delete(closedPath);
             }
-        });
+        }
     }
 
     private async showFiler(uri: vscode.Uri, column: 'active' | 'beside' = 'active'): Promise<void> {
