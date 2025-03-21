@@ -421,28 +421,19 @@ export class Controller {
             sourceDirUri: context.currentDirUri,
             sourceFileEntries: context.selectedEntries,
         };
-        if (operationType === 'rename') {
-            void vscode.window.showInformationMessage(
-                vscode.l10n.t('Prepared {0} items for moving.', context.selectedEntries.length)
-            );
-        } else if (operationType === 'copy') {
-            void vscode.window.showInformationMessage(
-                vscode.l10n.t('Prepared {0} items for copying.', context.selectedEntries.length)
-            );
-        } else {
-            void vscode.window.showInformationMessage(
-                vscode.l10n.t('Prepared {0} items for symbolic link creation.', context.selectedEntries.length)
-            );
-        }
+        const messages = {
+            rename: vscode.l10n.t('Prepared {0} items for moving.', context.selectedEntries.length),
+            copy: vscode.l10n.t('Prepared {0} items for copying.', context.selectedEntries.length),
+            symlink: vscode.l10n.t('Prepared {0} items for symbolic link creation.', context.selectedEntries.length),
+        };
+        void vscode.window.showInformationMessage(messages[operationType]);
+
         this.refresh({ resetSelection: true });
     }
 
     async executePendingOperation(): Promise<void> {
         const context = this.getCurrentNavigationContext();
-        if (!context) {
-            return;
-        }
-        if (!this.pendingFileOperation) {
+        if (!context || !this.pendingFileOperation) {
             return;
         }
         if (context.currentDirUri.path === this.pendingFileOperation.sourceDirUri.path) {
@@ -451,14 +442,15 @@ export class Controller {
             );
             return;
         }
+        const operationType = this.pendingFileOperation.operationType;
         const promises: Promise<edition.Result>[] = [];
         for (const entry of this.pendingFileOperation.sourceFileEntries) {
             const oldUri = entry.uri;
             const relativePath = path.relative(this.pendingFileOperation.sourceDirUri.fsPath, oldUri.fsPath);
             const newUri = vscode.Uri.joinPath(context.currentDirUri, relativePath);
-            if (this.pendingFileOperation.operationType === 'rename') {
+            if (operationType === 'rename') {
                 promises.push(edition.rename(oldUri, newUri, { overwrite: false }));
-            } else if (this.pendingFileOperation.operationType === 'copy') {
+            } else if (operationType === 'copy') {
                 promises.push(edition.copy(oldUri, newUri, { overwrite: false }));
             } else {
                 promises.push(edition.symlink(oldUri, newUri));
@@ -479,47 +471,46 @@ export class Controller {
                 }
             }
         }
+
+        if (conflictingEntries.length === 0 || operationType === 'symlink') {
+            this.pendingFileOperation = undefined;
+            this.refresh({ resetSelection: true });
+            return;
+        }
+
         const choices = [];
         const overwriteAll = vscode.l10n.t('Overwrite');
         const mergeOverwrite = vscode.l10n.t('Overwrite (Merge Folders)');
         const skip = vscode.l10n.t('Skip');
-        if (this.pendingFileOperation.operationType === 'rename') {
+        if (operationType === 'copy' && containsDir && IS_WINDOWS) {
+            choices.push(overwriteAll, mergeOverwrite, skip);
+        } else {
             choices.push(overwriteAll, skip);
-        } else if (this.pendingFileOperation.operationType === 'copy') {
-            if (IS_WINDOWS || !containsDir) {
-                choices.push(overwriteAll, skip);
-            } else {
-                choices.push(overwriteAll, mergeOverwrite, skip);
-            }
         }
-        let userSelection: string | undefined;
-        if (conflictingEntries.length > 0 && choices.length > 0) {
-            const joinedPaths = conflictingEntries.map((uri) => uri.path).join('\n');
-            userSelection = await vscode.window.showWarningMessage(
-                vscode.l10n.t('File already exists. Overwrite?'),
-                { modal: true, detail: joinedPaths },
-                ...choices
-            );
-        }
-        if (userSelection) {
+
+        const joinedPaths = conflictingEntries.map((uri) => uri.fsPath).join('\n');
+        const userSelection = await vscode.window.showWarningMessage(
+            vscode.l10n.t('File already exists. Overwrite?'),
+            { modal: true, detail: joinedPaths },
+            ...choices
+        );
+
+        if (userSelection && userSelection !== skip) {
             const rootUri = context.currentDirUri;
-            const overwrite = userSelection === overwriteAll || userSelection === mergeOverwrite;
-            const merge = userSelection === mergeOverwrite || userSelection === skip;
+            const merge = userSelection === mergeOverwrite;
 
             const promises: Promise<edition.Result>[] = [];
             for (const uri of conflictingEntries) {
                 const baseName = path.basename(uri.path);
-                if (this.pendingFileOperation.operationType === 'rename') {
-                    promises.push(
-                        edition.rename(uri, vscode.Uri.joinPath(rootUri, baseName), { overwrite: overwrite })
-                    );
-                } else if (this.pendingFileOperation.operationType === 'copy') {
+                if (operationType === 'copy') {
                     promises.push(
                         edition.copy(uri, vscode.Uri.joinPath(rootUri, baseName), {
-                            overwrite: overwrite,
+                            overwrite: true,
                             merge: merge,
                         })
                     );
+                } else {
+                    promises.push(edition.rename(uri, vscode.Uri.joinPath(rootUri, baseName), { overwrite: true }));
                 }
             }
             const operationResults = await Promise.all(promises);
