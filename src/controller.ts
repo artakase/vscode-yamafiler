@@ -528,45 +528,46 @@ export class Controller {
         }
         const document = context.editor.document;
 
-        let start = Math.max(context.editor.selection.start.line - 1, 0);
-        let end = context.editor.selection.end.line;
+        let selectionStartLine = Math.max(context.editor.selection.start.line - 1, 0);
+        let selectionEndLine = context.editor.selection.end.line;
 
         if (value === 'toggleAll') {
-            start = 0;
-            end = document.lineCount - 1;
-        } else if (end === 0) {
-            end = document.lineCount - 1;
-        } else if (end < document.lineCount - 1) {
+            selectionStartLine = 0;
+            selectionEndLine = document.lineCount - 1;
+        } else if (selectionEndLine === 0) {
+            selectionEndLine = document.lineCount - 1;
+        } else if (selectionEndLine < document.lineCount - 1) {
             void vscode.commands.executeCommand('cursorMove', { to: 'down', by: 'line' });
         }
 
-        let selectionStartIndex = context.dirView.asteriskedIndices.findIndex((value) => value >= start);
-        let selectionEndIndex = context.dirView.asteriskedIndices.findIndex((value) => value >= end);
-        if (selectionStartIndex === -1) {
-            selectionStartIndex = 0;
-            selectionEndIndex = 0;
-        } else if (selectionEndIndex === -1) {
-            selectionEndIndex = context.dirView.asteriskedIndices.length;
-        }
-
-        let shouldBeAsterisked: boolean;
+        let shouldAddAsterisk: boolean;
         if (value === 'on') {
-            shouldBeAsterisked = true;
+            shouldAddAsterisk = true;
         } else if (value === 'off') {
-            shouldBeAsterisked = false;
+            shouldAddAsterisk = false;
         } else {
-            shouldBeAsterisked = selectionEndIndex - selectionStartIndex !== end - start;
+            const asteriskedIndices = context.dirView.asteriskedIndices;
+            let asteriskStartLine = asteriskedIndices.findIndex((value) => value >= selectionStartLine);
+            if (asteriskStartLine === -1) {
+                asteriskStartLine = asteriskedIndices.length;
+            }
+            let asteriskEndLine = asteriskedIndices.findIndex((value) => value >= selectionEndLine);
+            if (asteriskEndLine === -1) {
+                asteriskEndLine = asteriskedIndices.length;
+            }
+            shouldAddAsterisk = asteriskEndLine - asteriskStartLine !== selectionEndLine - selectionStartLine;
         }
 
-        if (shouldBeAsterisked) {
-            context.dirView.asteriskedIndices.splice(
-                selectionStartIndex,
-                selectionEndIndex - selectionStartIndex,
-                ...Array.from({ length: end - start }, (_, i) => start + i)
-            );
-        } else {
-            context.dirView.asteriskedIndices.splice(selectionStartIndex, selectionEndIndex - selectionStartIndex);
+        const updatedAsteriskedIndexSet = new Set(context.dirView.asteriskedIndices);
+        for (let i = selectionStartLine; i < selectionEndLine; i++) {
+            if (shouldAddAsterisk) {
+                updatedAsteriskedIndexSet.add(i);
+            } else {
+                updatedAsteriskedIndexSet.delete(i);
+            }
         }
+        context.dirView.asteriskedIndices.splice(0);
+        context.dirView.asteriskedIndices.push(...[...updatedAsteriskedIndexSet].sort((a, b) => a - b));
         this.contentProvider.emitChange(document.uri);
     }
 
@@ -585,27 +586,26 @@ export class Controller {
             void vscode.window.showErrorMessage(vscode.l10n.t('Cache not found. Please refresh to rebuild the cache.'));
             return undefined;
         }
-        const asteriskedIndices = cachedDirView.asteriskedIndices;
-        let focusedEntry: FileEntry | undefined = undefined;
         const cursorLineNumber = activeEditor.selection.active.line;
-        if (0 < cursorLineNumber && cursorLineNumber <= cachedDirView.entries.length) {
-            focusedEntry = cachedDirView.entries[cursorLineNumber - 1];
-        }
+        const focusedEntry =
+            0 < cursorLineNumber && cursorLineNumber <= cachedDirView.entries.length
+                ? cachedDirView.entries[cursorLineNumber - 1]
+                : undefined;
         const selectedEntries: FileEntry[] = [];
         const existingFileNames = new Set<string>();
-        const asteriskedIndexSet = new Set(asteriskedIndices);
-        cachedDirView.entries.forEach((entry, index) => {
+        const asteriskedIndexSet = new Set(cachedDirView.asteriskedIndices);
+        for (const [index, entry] of cachedDirView.entries.entries()) {
             if (asteriskedIndexSet.has(index)) {
                 selectedEntries.push(entry);
             }
             if (fileNameFilterMode === 'all' || !asteriskedIndexSet.has(index)) {
                 existingFileNames.add(path.basename(entry.uri.path));
             }
-        });
+        }
         if (selectedEntries.length === 0) {
             const start = Math.max(activeEditor.selection.start.line - 1, 0);
             const end = activeEditor.selection.end.line;
-            selectedEntries.splice(0, 0, ...cachedDirView.entries.slice(start, end));
+            selectedEntries.push(...cachedDirView.entries.slice(start, end));
         }
         return {
             editor: activeEditor,
