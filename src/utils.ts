@@ -7,7 +7,7 @@ export const YAMAFILER_LANGUAGE_ID = 'yamafiler';
 
 export interface FileEntry {
     readonly uri: vscode.Uri;
-    readonly stats: vscode.FileStat;
+    readonly stats?: vscode.FileStat;
     readonly isDir: boolean;
     readonly isSymlink: boolean;
 }

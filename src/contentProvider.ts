@@ -16,10 +16,13 @@ export function compareFileSystemEntries(entryA: FileEntry, entryB: FileEntry): 
 }
 
 function formatEntryForDisplay(entry: FileEntry, isAsterisked: boolean): string {
-    const formattedModTime = new Date(entry.stats.mtime).toISOString().substring(5, 16).replace('T', ' ');
     const entryName = path.basename(entry.uri.path);
     const asteriskOrSpace = isAsterisked ? '*' : ' ';
     const dirMarker = entry.isDir ? '/' : '';
+    if (!entry.stats) {
+        return `${asteriskOrSpace}?                      ${entryName}${dirMarker}`;
+    }
+    const formattedModTime = new Date(entry.stats.mtime).toISOString().substring(5, 16).replace('T', ' ');
     const symlinkMarker =
         entry.isSymlink && entry.stats.type & (vscode.FileType.Directory | vscode.FileType.File)
             ? 'L'
@@ -115,32 +118,35 @@ export class YamafilerContentProvider implements vscode.TextDocumentContentProvi
         if (cachedDirView?.needsRefresh === false) {
             return cachedDirView;
         }
-        const entries: FileEntry[] = [];
-        for (const [filename, filetype] of await vscode.workspace.fs.readDirectory(uri)) {
-            const entryUri = vscode.Uri.joinPath(uri, filename);
+        const dirEntries = await vscode.workspace.fs.readDirectory(uri);
+        const statPromises = dirEntries.map(async ([fileName, fileType]) => {
+            const entryUri = vscode.Uri.joinPath(uri, fileName);
+            let fileStats: vscode.FileStat | undefined;
             try {
-                const stats = await vscode.workspace.fs.stat(entryUri);
-                entries.push({
-                    uri: entryUri,
-                    stats,
-                    isDir: !!(filetype & vscode.FileType.Directory),
-                    isSymlink: !!(filetype & vscode.FileType.SymbolicLink),
-                });
+                fileStats = await vscode.workspace.fs.stat(entryUri);
             } catch (error) {
-                console.log(`Could not get stats for ${entryUri.toString()}: ${getErrorMessage(error)}`);
+                console.warn(`Could not get stats for ${entryUri.toString()}: ${getErrorMessage(error)}`);
+                fileStats = undefined;
             }
-        }
+            return {
+                uri: entryUri,
+                stats: fileStats,
+                isDir: !!(fileType & vscode.FileType.Directory),
+                isSymlink: !!(fileType & vscode.FileType.SymbolicLink),
+            };
+        });
+        const entries = (await Promise.all(statPromises)).filter(Boolean) as FileEntry[];
         entries.sort(compareFileSystemEntries);
         const asteriskedIndices: number[] = [];
         if (cachedDirView) {
-            const asteriskedFileNameSet = new Set(
-                cachedDirView.asteriskedIndices.map((index) => cachedDirView.entries[index].uri.fsPath)
-            );
-            entries.forEach((entry, index) => {
-                if (asteriskedFileNameSet.has(entry.uri.fsPath)) {
-                    asteriskedIndices.push(index);
+            const uriPathToIndexMap = new Map(entries.map((entry, index) => [entry.uri.fsPath, index]));
+            for (const cachedEntryIndex of cachedDirView.asteriskedIndices) {
+                const path = cachedDirView.entries[cachedEntryIndex].uri.fsPath;
+                const currentEntryIndex = uriPathToIndexMap.get(path);
+                if (currentEntryIndex !== undefined) {
+                    asteriskedIndices.push(currentEntryIndex);
                 }
-            });
+            }
         }
         const refreshedDirView = { uri, entries, asteriskedIndices, needsRefresh: false };
         this.cachedDirViews.set(uri.fsPath, refreshedDirView);
