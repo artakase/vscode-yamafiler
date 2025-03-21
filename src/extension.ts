@@ -18,6 +18,10 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.workspace.registerTextDocumentContentProvider(YAMAFILER_SCHEME, controller.contentProvider)
     );
 
+    context.subscriptions.push(
+        vscode.languages.registerDocumentSymbolProvider(YAMAFILER_SCHEME, controller.symbolProvider)
+    );
+
     pushCommand('openFiler', controller.openFiler);
     pushCommand('enter', controller.openFocusedEntry);
     pushCommand('goToParent', controller.goToParent);

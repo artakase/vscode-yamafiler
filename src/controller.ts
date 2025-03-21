@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 
 import { YamafilerContentProvider } from './contentProvider';
 import * as edition from './edition';
+import { YamafilerSymbolProvider } from './symbolProvider';
 import {
     BatchFileOperation,
     FileEntry,
@@ -40,6 +41,7 @@ function resolveSymlinkIfRequested(sourceUri: vscode.Uri, resolveSymlinks: boole
 export class Controller {
     private readonly disposables: vscode.Disposable[] = [];
     readonly contentProvider = new YamafilerContentProvider();
+    readonly symbolProvider = new YamafilerSymbolProvider();
     private pendingFileOperation: PendingFileOperation | undefined;
     private currentBatchOperation: BatchFileOperation | undefined;
     private tempDirUri: vscode.Uri | undefined;

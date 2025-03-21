@@ -149,6 +149,7 @@
     "configurationDefaults": {
       "[yamafiler]": {
         "editor.folding": false,
+        "editor.stickyScroll.defaultModel": "outlineModel",
         "editor.stickyScroll.maxLineCount": 1
       }
     },
