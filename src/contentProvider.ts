@@ -5,7 +5,7 @@ import { filesize } from 'filesize';
 
 import * as vscode from 'vscode';
 
-import { DirView, FileEntry, getErrorMessage, YAMAFILER_SCHEME } from './utils';
+import { DirView, FileEntry, getErrorMessage, IS_WINDOWS, YAMAFILER_SCHEME } from './utils';
 
 export function compareFileSystemEntries(entryA: FileEntry, entryB: FileEntry): number {
     const dirOrder = (entryA.isDir ? 0 : 1) - (entryB.isDir ? 0 : 1);
@@ -35,14 +35,50 @@ function formatEntryForDisplay(entry: FileEntry, isAsterisked: boolean): string 
     )} ${formattedModTime} ${entryName}${dirMarker}`;
 }
 
+function normalizeDriveLetter(pathString: string): string {
+    const normalized = pathString.replace(/\\/g, '/');
+
+    if (IS_WINDOWS && /^[a-z]:/i.test(normalized)) {
+        return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    }
+
+    return normalized;
+}
+
 function tildify(absolutePath: string): string {
-    const relativePath = path.relative(vscode.Uri.file(os.homedir()).path, vscode.Uri.file(absolutePath).path);
-    if (relativePath === '') {
-        return '~';
-    } else if (relativePath.startsWith('..')) {
-        return absolutePath;
-    } else {
-        return `~${vscode.Uri.file(relativePath).fsPath}`;
+    if (!absolutePath) {
+        return '';
+    }
+
+    const homedir = os.homedir();
+
+    try {
+        if (absolutePath === homedir) {
+            return '~';
+        }
+        if (IS_WINDOWS) {
+            const homePrefix = homedir + path.sep;
+            if (absolutePath.startsWith(homePrefix)) {
+                return `~/${normalizeDriveLetter(absolutePath.substring(homePrefix.length))}`;
+            }
+            return normalizeDriveLetter(absolutePath);
+        }
+        if (path.parse(homedir).root.toLowerCase() !== path.parse(absolutePath).root.toLowerCase()) {
+            return normalizeDriveLetter(absolutePath);
+        }
+
+        const relativePath = path.relative(homedir, absolutePath);
+
+        if (relativePath === '') {
+            return '~';
+        } else if (!relativePath.startsWith('..')) {
+            return `~/${normalizeDriveLetter(relativePath)}`;
+        }
+
+        return normalizeDriveLetter(absolutePath);
+    } catch (error) {
+        console.error(`Error in tildify for path "${absolutePath}": ${getErrorMessage(error)}`);
+        return normalizeDriveLetter(absolutePath);
     }
 }
 
@@ -66,7 +102,8 @@ export class YamafilerContentProvider implements vscode.TextDocumentContentProvi
             );
             return '';
         }
-        const dirHeaderLine = `${tildify(uri.fsPath)}:`;
+        const tildifiedPath = tildify(uri.fsPath);
+        const dirHeaderLine = `${tildifiedPath}${tildifiedPath.endsWith('/') ? '' : '/'}:`;
         const asteriskedIndexSet = new Set(dirView.asteriskedIndices);
         return [dirHeaderLine]
             .concat(dirView.entries.map((entry, index) => formatEntryForDisplay(entry, asteriskedIndexSet.has(index))))
