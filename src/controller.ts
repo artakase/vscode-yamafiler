@@ -56,6 +56,14 @@ export class Controller {
         this.disposables.forEach((d) => {
             d.dispose();
         });
+
+        if (this.tempDirUri) {
+            try {
+                fs.rmSync(this.tempDirUri.fsPath, { recursive: true, force: true });
+            } catch (error) {
+                console.error(`Failed to delete temporary directory: ${getErrorMessage(error)}`);
+            }
+        }
     }
 
     cleanupClosedViewsFromCache(event: vscode.TabChangeEvent): void {

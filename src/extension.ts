@@ -10,6 +10,8 @@ import { YAMAFILER_SCHEME } from './utils';
 export function activate(context: vscode.ExtensionContext): void {
     const controller = new Controller(context);
 
+    context.subscriptions.push(controller);
+
     context.subscriptions.push(
         vscode.workspace.registerTextDocumentContentProvider(YAMAFILER_SCHEME, controller.contentProvider)
     );
