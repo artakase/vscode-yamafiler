@@ -47,9 +47,9 @@ export class Controller {
     private tempDirUri: vscode.Uri | undefined;
 
     constructor(private readonly context: vscode.ExtensionContext) {
-        this.disposables.push(vscode.window.tabGroups.onDidChangeTabs(this.cleanupClosedViewsFromCache, this));
-        this.disposables.push(vscode.workspace.onWillSaveTextDocument(this.processBatchOperation, this));
-        this.disposables.push(vscode.workspace.onDidSaveTextDocument(this.finalizeBatchOperation, this));
+        this.disposables.push(vscode.window.tabGroups.onDidChangeTabs(this.cleanupClosedViewsFromCache.bind(this)));
+        this.disposables.push(vscode.workspace.onWillSaveTextDocument(this.processBatchOperation.bind(this)));
+        this.disposables.push(vscode.workspace.onDidSaveTextDocument(this.finalizeBatchOperation.bind(this)));
     }
 
     public dispose(): void {

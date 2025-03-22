@@ -10,51 +10,51 @@ import { YAMAFILER_SCHEME } from './utils';
 export function activate(context: vscode.ExtensionContext): void {
     const controller = new Controller(context);
 
-    function pushCommand(name: string, callback: () => void | Promise<void>) {
-        context.subscriptions.push(vscode.commands.registerCommand(`yamafiler.${name}`, callback, controller));
-    }
-
     context.subscriptions.push(
         vscode.workspace.registerTextDocumentContentProvider(YAMAFILER_SCHEME, controller.contentProvider)
     );
-
     context.subscriptions.push(
         vscode.languages.registerDocumentSymbolProvider(YAMAFILER_SCHEME, controller.symbolProvider)
     );
 
-    pushCommand('openFiler', controller.openFiler);
-    pushCommand('enter', controller.openFocusedEntry);
-    pushCommand('goToParent', controller.goToParent);
-    pushCommand('refresh', controller.refresh);
-    pushCommand('openWorkspace', controller.openWorkspace);
-    pushCommand('addToWorkspace', controller.addToWorkspace);
-    pushCommand('newFolder', () => controller.create(true));
-    pushCommand('newFile', () => controller.create(false));
-    pushCommand('newMultipleFiles', () => controller.create(false, true));
-    pushCommand('rename', () => controller.executeFileOperation('rename'));
-    pushCommand('duplicate', () => controller.executeFileOperation('copy'));
-    pushCommand('symlink', () => controller.executeFileOperation('symlink'));
-    pushCommand('delete', controller.delete);
-    pushCommand('cut', () => {
-        controller.setPendingOperation('rename');
-    });
-    pushCommand('copy', () => {
-        controller.setPendingOperation('copy');
-    });
-    pushCommand('targetForSymlink', () => {
-        controller.setPendingOperation('symlink');
-    });
-    pushCommand('paste', controller.executePendingOperation);
-    pushCommand('select', () => {
-        controller.updateAsterisks('on');
-    });
-    pushCommand('deselect', () => {
-        controller.updateAsterisks('off');
-    });
-    pushCommand('toggleSelection', () => {
-        controller.updateAsterisks('toggle');
-    });
-    pushCommand('toggleSelectionAll', () => {
-        controller.updateAsterisks('toggleAll');
-    });
+    const commands = {
+        openFiler: controller.openFiler.bind(controller),
+        enter: controller.openFocusedEntry.bind(controller),
+        goToParent: controller.goToParent.bind(controller),
+        refresh: controller.refresh.bind(controller),
+        openWorkspace: controller.openWorkspace.bind(controller),
+        addToWorkspace: controller.addToWorkspace.bind(controller),
+        newFolder: () => controller.create(true),
+        newFile: () => controller.create(false),
+        newMultipleFiles: () => controller.create(false, true),
+        rename: () => controller.executeFileOperation('rename'),
+        duplicate: () => controller.executeFileOperation('copy'),
+        symlink: () => controller.executeFileOperation('symlink'),
+        delete: controller.delete.bind(controller),
+        cut: () => {
+            controller.setPendingOperation('rename');
+        },
+        copy: () => {
+            controller.setPendingOperation('copy');
+        },
+        targetForSymlink: () => {
+            controller.setPendingOperation('symlink');
+        },
+        paste: controller.executePendingOperation.bind(controller),
+        select: () => {
+            controller.updateAsterisks('on');
+        },
+        deselect: () => {
+            controller.updateAsterisks('off');
+        },
+        toggleSelection: () => {
+            controller.updateAsterisks('toggle');
+        },
+        toggleSelectionAll: () => {
+            controller.updateAsterisks('toggleAll');
+        },
+    };
+    for (const [command, callback] of Object.entries(commands)) {
+        context.subscriptions.push(vscode.commands.registerCommand(`yamafiler.${command}`, callback));
+    }
 }

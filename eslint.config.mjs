@@ -27,7 +27,6 @@ export default tseslint.config({
     },
     rules: {
         '@typescript-eslint/no-base-to-string': 'off',
-        '@typescript-eslint/unbound-method': 'off',
         'import/order': [
             'error',
             {
