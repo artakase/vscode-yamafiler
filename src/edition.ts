@@ -2,6 +2,7 @@ import * as fsPromises from 'fs/promises';
 
 import * as vscode from 'vscode';
 
+import { normalizeError } from './utils';
 export interface SuccessResult<T> {
     value: T;
     error: undefined;
@@ -15,20 +16,6 @@ export interface FailureResult {
 }
 
 export type Result<T = void> = SuccessResult<T> | FailureResult;
-
-function normalizeError(error: unknown): Error {
-    if (error instanceof vscode.FileSystemError) {
-        return error;
-    } else if (error instanceof Error) {
-        if (error.name === 'SystemError' && error.message.startsWith('Target already exists:')) {
-            return vscode.FileSystemError.FileExists(error.message);
-        }
-        return error;
-    } else if (error instanceof Object) {
-        return new Error(error.toString());
-    }
-    return new Error('Unknown error.');
-}
 
 async function resolveResult<T>(
     operation: Thenable<T>,

@@ -41,14 +41,54 @@ export interface BatchFileOperation {
     hasCompleted: boolean;
 }
 
-export function getErrorMessage(error: unknown): string {
-    if (error instanceof Error) {
-        return error.message;
-    } else if (error instanceof Object) {
-        return error.toString();
+export function normalizeError(error: unknown): Error {
+    if (error instanceof vscode.FileSystemError) {
+        return error;
+    } else if (error instanceof Error) {
+        if (
+            error.name === 'SystemError' &&
+            typeof error.message === 'string' &&
+            error.message.startsWith('Target already exists:')
+        ) {
+            return vscode.FileSystemError.FileExists(error.message);
+        }
+        return error;
+    } else if (error === null) {
+        return new Error('Error object is null');
+    } else if (error === undefined) {
+        return new Error('Error object is undefined');
+    } else if (typeof error === 'string' || typeof error === 'number' || typeof error === 'boolean') {
+        return new Error(String(error));
+    } else if (typeof error === 'object') {
+        try {
+            const serialized = JSON.stringify(error);
+            return new Error(serialized);
+        } catch (serializationError) {
+            try {
+                const errorType = Object.prototype.toString.call(error);
+
+                const keys = Object.keys(error).slice(0, 10);
+                const keysStr = keys.join(', ') + (keys.length >= 10 ? '...' : '');
+
+                const serializationErrorMessage =
+                    serializationError instanceof Error ? serializationError.message : 'Unknown serialization error';
+
+                return new Error(
+                    `[Unserializable object: ${errorType} with keys: ${keysStr}] ${serializationErrorMessage}`
+                );
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            } catch (unexpectedError: unknown) {
+                return new Error('Error during serialization of complex object');
+            }
+        }
     } else {
-        return 'unknown error';
+        return new Error('Unknown error type');
     }
+}
+
+export function getErrorMessage(error: unknown): string {
+    const normalizedError = normalizeError(error);
+    return normalizedError.message;
 }
 
 export function getUriFromTab(tab: vscode.Tab | undefined): vscode.Uri | undefined {

@@ -26,7 +26,6 @@ export default tseslint.config({
         },
     },
     rules: {
-        '@typescript-eslint/no-base-to-string': 'off',
         'import/order': [
             'error',
             {
