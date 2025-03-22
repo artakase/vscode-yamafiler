@@ -147,6 +147,9 @@
       }
     },
     "configurationDefaults": {
+      "search.exclude": {
+        "**/*.yamafiler-batch": true
+      },
       "[yamafiler]": {
         "editor.folding": false,
         "editor.stickyScroll.defaultModel": "outlineModel",
