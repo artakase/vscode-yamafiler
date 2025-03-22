@@ -46,9 +46,9 @@ export function normalizeError(error: unknown): Error {
         return error;
     } else if (error instanceof Error) {
         if (
-            error.name === 'SystemError' &&
-            typeof error.message === 'string' &&
-            error.message.startsWith('Target already exists:')
+            error.name === 'SystemError'
+            && typeof error.message === 'string'
+            && error.message.startsWith('Target already exists:')
         ) {
             return vscode.FileSystemError.FileExists(error.message);
         }
@@ -70,13 +70,14 @@ export function normalizeError(error: unknown): Error {
                 const keys = Object.keys(error).slice(0, 10);
                 const keysStr = keys.join(', ') + (keys.length >= 10 ? '...' : '');
 
-                const serializationErrorMessage =
-                    serializationError instanceof Error ? serializationError.message : 'Unknown serialization error';
+                const serializationErrorMessage = serializationError instanceof Error
+                    ? serializationError.message
+                    : 'Unknown serialization error';
 
                 return new Error(
                     `[Unserializable object: ${errorType} with keys: ${keysStr}] ${serializationErrorMessage}`
                 );
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (unexpectedError: unknown) {
                 return new Error('Error during serialization of complex object');
             }
@@ -95,9 +96,9 @@ export function getUriFromTab(tab: vscode.Tab | undefined): vscode.Uri | undefin
     if (!tab) {
         return undefined;
     } else if (
-        tab.input instanceof vscode.TabInputText ||
-        tab.input instanceof vscode.TabInputCustom ||
-        tab.input instanceof vscode.TabInputNotebook
+        tab.input instanceof vscode.TabInputText
+        || tab.input instanceof vscode.TabInputCustom
+        || tab.input instanceof vscode.TabInputNotebook
     ) {
         return tab.input.uri;
     } else if (tab.input instanceof vscode.TabInputTextDiff || tab.input instanceof vscode.TabInputNotebookDiff) {

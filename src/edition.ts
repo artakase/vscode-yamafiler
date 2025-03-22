@@ -3,6 +3,7 @@ import * as fsPromises from 'fs/promises';
 import * as vscode from 'vscode';
 
 import { normalizeError } from './utils';
+
 export interface SuccessResult<T> {
     value: T;
     error: undefined;

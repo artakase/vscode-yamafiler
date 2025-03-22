@@ -23,19 +23,15 @@ function formatEntryForDisplay(entry: FileEntry, isAsterisked: boolean): string 
         return `${asteriskOrSpace}?                      ${entryName}${dirMarker}`;
     }
     const formattedModTime = new Date(entry.stats.mtime).toISOString().substring(5, 16).replace('T', ' ');
-    const symlinkMarker =
-        entry.isSymlink && entry.stats.type & (vscode.FileType.Directory | vscode.FileType.File)
-            ? 'L'
-            : entry.isSymlink
-            ? 'l'
-            : ' ';
+    let symlinkMarker = ' ';
+    if (entry.isSymlink) {
+        symlinkMarker = entry.stats.type & (vscode.FileType.Directory | vscode.FileType.File) ? 'L' : 'l';
+    }
     const formattedSize = entry.isDir
         ? ''
         : filesize(entry.stats.size, { base: 2, standard: 'jedec', round: 1, symbols: { B: ' B' } });
 
-    return `${asteriskOrSpace}${symlinkMarker}${formattedSize.padStart(
-        9
-    )} ${formattedModTime} ${entryName}${dirMarker}`;
+    return `${asteriskOrSpace}${symlinkMarker}${formattedSize.padStart(9)} ${formattedModTime} ${entryName}${dirMarker}`;
 }
 
 function normalizeDriveLetter(pathString: string): string {

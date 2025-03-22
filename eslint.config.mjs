@@ -1,18 +1,25 @@
 // @ts-check
 
 import eslint from '@eslint/js';
+import stylistic from '@stylistic/eslint-plugin';
 import * as importPlugin from 'eslint-plugin-import';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config({
     extends: [
         eslint.configs.recommended,
+        stylistic.configs.customize({
+            braceStyle: '1tbs',
+            indent: 4,
+            semi: true,
+        }),
         ...tseslint.configs.strictTypeChecked,
         ...tseslint.configs.stylisticTypeChecked,
     ],
     plugins: {
+        '@stylistic': stylistic,
         '@typescript-eslint': tseslint.plugin,
-        import: importPlugin,
+        'import': importPlugin,
     },
     languageOptions: {
         ecmaVersion: 2020,
@@ -24,23 +31,71 @@ export default tseslint.config({
         },
     },
     rules: {
+        '@stylistic/comma-dangle': [
+            'error',
+            {
+                arrays: 'always-multiline',
+                objects: 'always-multiline',
+                imports: 'always-multiline',
+                exports: 'always-multiline',
+                functions: 'never',
+            },
+        ],
+        '@stylistic/implicit-arrow-linebreak': ['error', 'beside'],
+        '@stylistic/max-len': ['error', { code: 120, ignoreStrings: true, ignoreTemplateLiterals: true }],
+        '@stylistic/spaced-comment': ['error', 'always', { exceptions: ['-'] }],
+        '@stylistic/no-mixed-operators': [
+            'error',
+            {
+                groups: [
+                    ['%', '**'],
+                    ['%', '+'],
+                    ['%', '-'],
+                    ['%', '*'],
+                    ['%', '/'],
+                    ['**', '+'],
+                    ['**', '-'],
+                    ['**', '*'],
+                    ['**', '/'],
+                    ['&', '|', '^', '~', '<<', '>>', '>>>'],
+                    ['==', '!=', '===', '!==', '>', '>=', '<', '<='],
+                    ['&&', '||'],
+                    ['in', 'instanceof'],
+                ],
+                allowSamePrecedence: false,
+            },
+        ],
+        '@stylistic/operator-linebreak': [
+            'error',
+            'before',
+            {
+                overrides: {
+                    '=': 'none',
+                },
+            },
+        ],
+        '@stylistic/padding-line-between-statements': [
+            'error',
+            { blankLine: 'always', prev: '*', next: ['class', 'function', 'export'] },
+            { blankLine: 'never', prev: 'singleline-export', next: 'singleline-export' },
+        ],
         'import/order': [
             'error',
             {
-                groups: ['builtin', 'external', 'internal', ['parent', 'sibling'], 'index'],
+                'groups': ['builtin', 'external', 'internal', ['parent', 'sibling'], 'index'],
                 'newlines-between': 'always',
-                alphabetize: {
+                'alphabetize': {
                     order: 'asc',
                     caseInsensitive: true,
                 },
-                pathGroups: [
+                'pathGroups': [
                     {
                         pattern: 'vscode',
                         group: 'internal',
                         position: 'before',
                     },
                 ],
-                pathGroupsExcludedImportTypes: ['vscode'],
+                'pathGroupsExcludedImportTypes': ['vscode'],
             },
         ],
         'import/no-duplicates': 'error',
