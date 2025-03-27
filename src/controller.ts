@@ -75,7 +75,8 @@ export class Controller {
             } else if (
                 uri
                 && this.currentBatchOperation
-                && normalizePath(this.currentBatchOperation.batchDocument.uri.fsPath) === normalizePath(uri.fsPath)
+                && path.relative(normalizePath(this.currentBatchOperation.batchDocument.uri.fsPath),
+                    normalizePath(uri.fsPath)) === ''
             ) {
                 this.currentBatchOperation = undefined;
             }
@@ -804,7 +805,8 @@ export class Controller {
             if (
                 activeTab
                 && tabPath
-                && normalizePath(tabPath) === normalizePath(this.currentBatchOperation.batchDocument.uri.fsPath)
+                && path.relative(normalizePath(tabPath),
+                    normalizePath(this.currentBatchOperation.batchDocument.uri.fsPath)) === ''
             ) {
                 void vscode.window.tabGroups.close(activeTab);
             }
