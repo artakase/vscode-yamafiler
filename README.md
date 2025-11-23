@@ -62,7 +62,7 @@ Yamafiler is a text-based file manager for VS Code.
 
 Please adjust keys manually if they conflict with other extensions.
 
-To preview `.pdf` files, you need additional extensions such as `vscode-pdf`.
+To preview `.pdf` files, you need additional extensions such as [vscode-pdf](https://marketplace.visualstudio.com/items?itemName=tomoki1207.pdf).
 
 See [here](docs/keybindings.json) for equivalent keybindings.json configuration.
 
@@ -172,7 +172,7 @@ In the source folder, mark the files/folders you want to operate on as target li
 
 `yamafiler.cut` (`M`) - Mark for moving (cut).
 
-`yamafiler.copy` (`Y`) - Mark for duplication (copy). Note: On Unix and Mac systems, this operation also supports folder merging.
+`yamafiler.copy` (`Y`) - Mark for duplication (copy). Note: This operation also supports folder merging.
 
 `yamafiler.targetForSymlink` (`Shift+T`) - Mark as a symbolic link target.
 
