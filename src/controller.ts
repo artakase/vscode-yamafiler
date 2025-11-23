@@ -687,24 +687,10 @@ export class Controller {
         this.tempDirUri ??= vscode.Uri.file(fs.mkdtempSync(path.join(os.tmpdir(), 'yamafiler-')));
         const originalNamesFileUri = vscode.Uri.joinPath(this.tempDirUri, '.Original.yamafiler-batch');
         const editableNamesFileUri = vscode.Uri.joinPath(this.tempDirUri, '.FileNames.yamafiler-batch');
+        let batchEditDocument: vscode.TextDocument;
         if (operationType === 'create') {
             await vscode.workspace.fs.writeFile(editableNamesFileUri, new Uint8Array());
-        } else {
-            const selectedEntryNames = currentContext.selectedEntries.map(
-                file => path.basename(file.uri.path) + (file.isDir ? '/' : '')
-            );
-            await vscode.workspace.fs.writeFile(
-                originalNamesFileUri,
-                new TextEncoder().encode(selectedEntryNames.join('\n'))
-            );
-            await vscode.workspace.fs.writeFile(
-                editableNamesFileUri,
-                new TextEncoder().encode(selectedEntryNames.join('\n'))
-            );
-        }
-
-        const batchEditDocument = await vscode.workspace.openTextDocument(editableNamesFileUri);
-        if (operationType === 'create') {
+            batchEditDocument = await vscode.workspace.openTextDocument(editableNamesFileUri);
             await vscode.window.showTextDocument(batchEditDocument, { preview: false });
             void vscode.window.showInformationMessage(
                 vscode.l10n.t(
@@ -712,6 +698,16 @@ export class Controller {
                 )
             );
         } else {
+            const selectedEntryNames = currentContext.selectedEntries.map(
+                file => path.basename(file.uri.path) + (file.isDir ? '/' : '')
+            );
+            const fileContent = new TextEncoder().encode(selectedEntryNames.join('\n'));
+
+            await Promise.all([
+                vscode.workspace.fs.writeFile(originalNamesFileUri, fileContent),
+                vscode.workspace.fs.writeFile(editableNamesFileUri, fileContent),
+            ]);
+            batchEditDocument = await vscode.workspace.openTextDocument(editableNamesFileUri);
             const operationMessages = {
                 rename: {
                     title: 'Old Names ↔ New Names',
@@ -754,8 +750,8 @@ export class Controller {
     async processBatchOperation(event: vscode.TextDocumentWillSaveEvent): Promise<void> {
         const batchOperation = this.currentBatchOperation;
         if (
-            !this.currentBatchOperation
-            || event.document !== batchOperation?.batchDocument
+            !batchOperation
+            || event.document !== batchOperation.batchDocument
             || event.reason !== vscode.TextDocumentSaveReason.Manual
         ) {
             return;
@@ -802,7 +798,7 @@ export class Controller {
             }
 
             uniqueFileNameSet.add(normalizePath(newBaseName));
-            const newUri = vscode.Uri.joinPath(this.currentBatchOperation.navigationContext.currentDirUri, newBaseName);
+            const newUri = vscode.Uri.joinPath(batchOperation.navigationContext.currentDirUri, newBaseName);
             if (operationType === 'create') {
                 fileCreationEntries.push([newUri, isDir]);
             } else {
@@ -841,16 +837,17 @@ export class Controller {
         const operationResults = await Promise.all(operationPromises);
         edition.showAndLogErrors(operationResults);
 
-        this.currentBatchOperation.hasCompleted = true;
+        batchOperation.hasCompleted = true;
         this.contentProvider.emitChange(batchOperation.navigationContext.currentDirUri, true);
     }
 
     finalizeBatchOperation(document: vscode.TextDocument): void {
-        if (!this.currentBatchOperation?.hasCompleted) {
+        const batchOperation = this.currentBatchOperation;
+        if (!batchOperation?.hasCompleted) {
             return;
         }
 
-        if (document === this.currentBatchOperation.batchDocument) {
+        if (document === batchOperation.batchDocument) {
             const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
             const tabPath = getUriFromTab(activeTab)?.fsPath;
             if (
@@ -858,7 +855,7 @@ export class Controller {
                 && tabPath
                 && path.relative(
                     normalizePath(tabPath),
-                    normalizePath(this.currentBatchOperation.batchDocument.uri.fsPath)
+                    normalizePath(batchOperation.batchDocument.uri.fsPath)
                 ) === ''
             ) {
                 void vscode.window.tabGroups.close(activeTab);
