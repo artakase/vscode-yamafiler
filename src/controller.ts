@@ -14,7 +14,6 @@ import {
     FileEntry,
     getErrorMessage,
     getUriFromTab,
-    IS_WINDOWS,
     NavigationContext,
     normalizePath,
     PendingFileOperation,
@@ -520,7 +519,7 @@ export class Controller {
         const overwriteAll = vscode.l10n.t('Overwrite');
         const mergeOverwrite = vscode.l10n.t('Overwrite (Merge Folders)');
         const skip = vscode.l10n.t('Skip');
-        if (operationType === 'copy' && containsDir && IS_WINDOWS) {
+        if (operationType === 'copy' && containsDir) {
             choices.push(overwriteAll, mergeOverwrite, skip);
         } else {
             choices.push(overwriteAll, skip);
