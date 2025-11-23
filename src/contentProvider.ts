@@ -123,24 +123,34 @@ export class YamafilerContentProvider implements vscode.TextDocumentContentProvi
         }
 
         const dirEntries = await vscode.workspace.fs.readDirectory(uri);
-        const statPromises = dirEntries.map(async ([fileName, fileType]) => {
-            const entryUri = vscode.Uri.joinPath(uri, fileName);
-            let fileStats: vscode.FileStat | undefined;
-            try {
-                fileStats = await vscode.workspace.fs.stat(entryUri);
-            } catch (error) {
-                console.warn(`Could not get stats for ${entryUri.toString()}: ${getErrorMessage(error)}`);
-                fileStats = undefined;
-            }
 
-            return {
-                uri: entryUri,
-                stats: fileStats,
-                isDir: !!(fileType & vscode.FileType.Directory),
-                isSymlink: !!(fileType & vscode.FileType.SymbolicLink),
-            };
-        });
-        const entries = (await Promise.all(statPromises)).filter(Boolean) as FileEntry[];
+        const BATCH_SIZE = 50;
+        const entries: FileEntry[] = [];
+
+        for (let i = 0; i < dirEntries.length; i += BATCH_SIZE) {
+            const batch = dirEntries.slice(i, i + BATCH_SIZE);
+            const batchPromises = batch.map(async ([fileName, fileType]) => {
+                const entryUri = vscode.Uri.joinPath(uri, fileName);
+                let fileStats: vscode.FileStat | undefined;
+                try {
+                    fileStats = await vscode.workspace.fs.stat(entryUri);
+                } catch (error) {
+                    console.warn(`Could not get stats for ${entryUri.toString()}: ${getErrorMessage(error)}`);
+                    fileStats = undefined;
+                }
+
+                return {
+                    uri: entryUri,
+                    stats: fileStats,
+                    isDir: !!(fileType & vscode.FileType.Directory),
+                    isSymlink: !!(fileType & vscode.FileType.SymbolicLink),
+                } as FileEntry;
+            });
+
+            const batchResults = await Promise.all(batchPromises);
+            entries.push(...batchResults);
+        }
+
         entries.sort(compareFileSystemEntries);
         const asteriskedIndices: number[] = [];
         if (cachedDirView) {
