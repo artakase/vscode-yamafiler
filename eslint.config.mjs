@@ -1,35 +1,36 @@
 // @ts-check
-
 import eslint from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
+import { defineConfig } from 'eslint/config';
 import * as importPlugin from 'eslint-plugin-import';
 import tseslint from 'typescript-eslint';
 
-export default tseslint.config({
+export default defineConfig({
+    files: ['src/**/*.ts', '*.mjs'],
+    languageOptions: {
+        ecmaVersion: 2022,
+        parserOptions: {
+            projectService: {
+                allowDefaultProject: ['*.mjs'],
+            },
+        },
+    },
+    plugins: {
+        '@stylistic': stylistic,
+        '@typescript-eslint': tseslint.plugin,
+        'import': importPlugin,
+    },
     extends: [
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         eslint.configs.recommended,
         stylistic.configs.customize({
             braceStyle: '1tbs',
             indent: 4,
             semi: true,
         }),
-        ...tseslint.configs.strictTypeChecked,
-        ...tseslint.configs.stylisticTypeChecked,
+        tseslint.configs.strictTypeChecked,
+        tseslint.configs.stylisticTypeChecked,
     ],
-    plugins: {
-        '@stylistic': stylistic,
-        '@typescript-eslint': tseslint.plugin,
-        'import': importPlugin,
-    },
-    languageOptions: {
-        ecmaVersion: 2022,
-        sourceType: 'module',
-        parser: tseslint.parser,
-        parserOptions: {
-            project: true,
-            tsconfigRootDir: import.meta.dirname,
-        },
-    },
     rules: {
         '@stylistic/array-bracket-newline': ['error', { multiline: true }],
         '@stylistic/comma-dangle': [
@@ -114,6 +115,4 @@ export default tseslint.config({
             },
         ],
     },
-    files: ['src/**/*.ts'],
-    ignores: ['src/test/**/*.ts'],
 });
