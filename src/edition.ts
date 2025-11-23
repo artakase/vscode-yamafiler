@@ -39,6 +39,7 @@ export function showAndLogErrors(results: Result[]) {
                 hasError = true;
                 void vscode.window.showErrorMessage(error.message);
             }
+
             console.error(error.message);
         }
     }
@@ -48,6 +49,7 @@ export function createDir(uri: vscode.Uri): Promise<Result> {
     function formatErrorMessage(errorMessage: string) {
         return vscode.l10n.t('Could not create {0}: {1}', uri.fsPath, errorMessage);
     }
+
     return resolveResult(vscode.workspace.fs.createDirectory(uri), formatErrorMessage);
 }
 
@@ -55,6 +57,7 @@ export function createFile(uri: vscode.Uri): Promise<Result> {
     function formatErrorMessage(errorMessage: string) {
         return vscode.l10n.t('Could not create {0}: {1}', uri.fsPath, errorMessage);
     }
+
     return resolveResult(fsPromises.writeFile(uri.fsPath, '', { flag: 'wx' }), formatErrorMessage);
 }
 
@@ -66,6 +69,7 @@ export function rename(
     function formatErrorMessage(errorMessage: string) {
         return vscode.l10n.t('Could not rename {0} to {1}: {2}', sourceUri.fsPath, targetUri.fsPath, errorMessage);
     }
+
     return resolveResult(
         vscode.workspace.fs.rename(sourceUri, targetUri, { overwrite: options?.overwrite }),
         formatErrorMessage
@@ -80,6 +84,7 @@ export function copy(
     function formatErrorMessage(errorMessage: string) {
         return vscode.l10n.t('Could not copy {0} to {1}: {2}', sourceUri.fsPath, targetUri.fsPath, errorMessage);
     }
+
     if (options?.merge) {
         return resolveResult(
             fsPromises.cp(sourceUri.fsPath, targetUri.fsPath, {
@@ -101,6 +106,7 @@ function _delete(uri: vscode.Uri, options?: { recursive?: boolean; useTrash?: bo
     function formatErrorMessage(errorMessage: string) {
         return vscode.l10n.t('Could not delete {0}: {1}', uri.fsPath, errorMessage);
     }
+
     return resolveResult(vscode.workspace.fs.delete(uri, options), formatErrorMessage);
 }
 
@@ -115,5 +121,6 @@ export function symlink(targetUri: vscode.Uri, symlinkUri: vscode.Uri): Promise<
             errorMessage
         );
     }
+
     return resolveResult(fsPromises.symlink(targetUri.fsPath, symlinkUri.fsPath), formatErrorMessage);
 }

@@ -75,15 +75,19 @@ export class Controller {
             } else if (
                 uri
                 && this.currentBatchOperation
-                && path.relative(normalizePath(this.currentBatchOperation.batchDocument.uri.fsPath),
-                    normalizePath(uri.fsPath)) === ''
+                && path.relative(
+                    normalizePath(this.currentBatchOperation.batchDocument.uri.fsPath),
+                    normalizePath(uri.fsPath)
+                ) === ''
             ) {
                 this.currentBatchOperation = undefined;
             }
         }
+
         if (closedViewPaths.size === 0) {
             return;
         }
+
         const remainingViewPaths = new Set<string>();
         for (const tabGroup of vscode.window.tabGroups.all) {
             for (const tab of tabGroup.tabs) {
@@ -93,6 +97,7 @@ export class Controller {
                 }
             }
         }
+
         for (const closedPath of closedViewPaths) {
             if (!remainingViewPaths.has(closedPath)) {
                 this.contentProvider.cachedDirViews.delete(closedPath);
@@ -106,11 +111,13 @@ export class Controller {
         if (document.lineAt(0).isEmptyOrWhitespace) {
             return;
         }
+
         if (document.languageId === YAMAFILER_LANGUAGE_ID) {
             this.contentProvider.emitChange(yamafilerUri);
         } else {
             void vscode.languages.setTextDocumentLanguage(document, YAMAFILER_LANGUAGE_ID);
         }
+
         const selection = document.lineCount > 1 ? new vscode.Range(1, 0, 1, 0) : undefined;
         await vscode.window
             .showTextDocument(document, {
@@ -119,8 +126,7 @@ export class Controller {
             })
             .then(undefined, (reason: unknown) => vscode.window.showErrorMessage(
                 vscode.l10n.t('Could not open {0}: {1}', uri.fsPath, getErrorMessage(reason))
-            )
-            );
+            ));
     }
 
     async openFiler({
@@ -148,6 +154,7 @@ export class Controller {
             if (uris?.length !== 1) {
                 return;
             }
+
             targetDirUri = uris[0];
         } else if (path === '~') {
             targetDirUri = homeUri;
@@ -171,16 +178,19 @@ export class Controller {
             if (!activeFile) {
                 return;
             }
+
             targetDirUri = vscode.Uri.joinPath(activeFile, '..');
         } else if (workspaceUri) {
             targetDirUri = workspaceUri;
         } else {
             targetDirUri = homeUri;
         }
+
         targetDirUri = resolveSymlinkIfRequested(targetDirUri, resolveSymlinks);
         if (!targetDirUri) {
             return;
         }
+
         await this.showFiler(targetDirUri, column);
     }
 
@@ -206,6 +216,7 @@ export class Controller {
         if (!focusedEntry) {
             return;
         }
+
         const targetUri = resolveSymlinkIfRequested(focusedEntry.uri, resolveSymlinks);
         if (!targetUri) {
             return;
@@ -225,6 +236,7 @@ export class Controller {
             } else {
                 void this.showFiler(targetUri, 'active');
             }
+
             return;
         }
 
@@ -262,16 +274,19 @@ export class Controller {
         if (!focused) {
             return;
         }
+
         const targetUri = resolveSymlinkIfRequested(focused.uri, resolveSymlinks);
         if (!targetUri) {
             return;
         }
+
         if (
             !focused.isDir
             && !minimatch(targetUri.path, '*.code-workspace', { matchBase: true, dot: true, noext: true })
         ) {
             return;
         }
+
         void vscode.commands.executeCommand('vscode.openFolder', targetUri, { forceNewWindow });
     }
 
@@ -280,6 +295,7 @@ export class Controller {
         if (!files || files.length === 0) {
             return;
         }
+
         let uris: { uri: vscode.Uri }[];
         if (resolveSymlinks) {
             uris = [];
@@ -288,11 +304,13 @@ export class Controller {
                 if (!uri) {
                     return;
                 }
+
                 uris.push({ uri });
             }
         } else {
             uris = files.map(file => ({ uri: file.uri }));
         }
+
         const success = vscode.workspace.updateWorkspaceFolders(
             vscode.workspace.workspaceFolders?.length ?? 0,
             undefined,
@@ -308,10 +326,12 @@ export class Controller {
         if (!context) {
             return;
         }
+
         if (multiple) {
             void this.startBatchOperation(context, 'create');
             return;
         }
+
         const newFileNameBase = await vscode.window.showInputBox({
             prompt: isDir ? vscode.l10n.t('Folder name') : vscode.l10n.t('File name'),
             validateInput: makeValidator(context.existingFileNames),
@@ -324,10 +344,12 @@ export class Controller {
             } else {
                 result = await edition.createFile(uri);
             }
+
             if (result.error) {
                 void vscode.window.showErrorMessage(result.message);
             }
         }
+
         this.refresh({ resetSelection: true });
     }
 
@@ -336,16 +358,19 @@ export class Controller {
         if (!context || context.selectedEntries.length === 0) {
             return;
         }
+
         if (context.selectedEntries.length > 1) {
             void this.startBatchOperation(context, operationType);
             return;
         }
+
         const entry = context.selectedEntries[0];
         const oldBaseName = path.basename(entry.uri.path);
         let end = oldBaseName.lastIndexOf('.');
         if (end < 1) {
             end = oldBaseName.length;
         }
+
         let inputPromptText: string;
         if (operationType === 'rename') {
             inputPromptText = vscode.l10n.t('New name');
@@ -354,6 +379,7 @@ export class Controller {
         } else {
             inputPromptText = vscode.l10n.t('Link name');
         }
+
         const newBaseName = await vscode.window.showInputBox({
             value: oldBaseName,
             valueSelection: [0, end],
@@ -370,10 +396,12 @@ export class Controller {
             } else {
                 result = await edition.symlink(entry.uri, uri);
             }
+
             if (result.error) {
                 void vscode.window.showErrorMessage(result.message);
             }
         }
+
         this.refresh({ resetSelection: true });
     }
 
@@ -382,6 +410,7 @@ export class Controller {
         if (!context || context.selectedEntries.length === 0) {
             return;
         }
+
         const selectedEntryPaths = context.selectedEntries.map(entry => entry.uri.fsPath).join('\n');
         const choiceDelete = useTrash ? vscode.l10n.t('Move to Trash') : vscode.l10n.t('Delete Permanently');
         const userSelection = await vscode.window.showWarningMessage(
@@ -404,6 +433,7 @@ export class Controller {
                     success.push(context.selectedEntries[index].uri.fsPath);
                 }
             }
+
             edition.showAndLogErrors(failure);
             if (success.length > 0) {
                 void vscode.window.showInformationMessage(
@@ -411,6 +441,7 @@ export class Controller {
                 );
             }
         }
+
         this.refresh({ resetSelection: true });
     }
 
@@ -419,6 +450,7 @@ export class Controller {
         if (!context || context.selectedEntries.length == 0) {
             return;
         }
+
         this.pendingFileOperation = {
             operationType: operationType,
             sourceDirUri: context.currentDirUri,
@@ -439,12 +471,14 @@ export class Controller {
         if (!context || !this.pendingFileOperation) {
             return;
         }
+
         if (context.currentDirUri.path === this.pendingFileOperation.sourceDirUri.path) {
             void vscode.window.showErrorMessage(
                 vscode.l10n.t('Could not paste: Source and destination folders are the same.')
             );
             return;
         }
+
         const operationType = this.pendingFileOperation.operationType;
         const promises: Promise<edition.Result>[] = [];
         for (const entry of this.pendingFileOperation.sourceFileEntries) {
@@ -459,6 +493,7 @@ export class Controller {
                 promises.push(edition.symlink(oldUri, newUri));
             }
         }
+
         const operationResults = await Promise.all(promises);
         const conflictingEntries: vscode.Uri[] = [];
         let containsDir = false;
@@ -507,15 +542,13 @@ export class Controller {
                 const baseName = path.basename(uri.path);
                 if (operationType === 'copy') {
                     promises.push(
-                        edition.copy(uri, vscode.Uri.joinPath(rootUri, baseName), {
-                            overwrite: true,
-                            merge: merge,
-                        })
+                        edition.copy(uri, vscode.Uri.joinPath(rootUri, baseName), { overwrite: true, merge: merge })
                     );
                 } else {
                     promises.push(edition.rename(uri, vscode.Uri.joinPath(rootUri, baseName), { overwrite: true }));
                 }
             }
+
             const operationResults = await Promise.all(promises);
             edition.showAndLogErrors(operationResults);
         }
@@ -529,6 +562,7 @@ export class Controller {
         if (!context) {
             return;
         }
+
         const document = context.editor.document;
 
         let selectionStartLine = Math.max(context.editor.selection.start.line - 1, 0);
@@ -554,10 +588,12 @@ export class Controller {
             if (asteriskStartLine === -1) {
                 asteriskStartLine = asteriskedIndices.length;
             }
+
             let asteriskEndLine = asteriskedIndices.findIndex(value => value >= selectionEndLine);
             if (asteriskEndLine === -1) {
                 asteriskEndLine = asteriskedIndices.length;
             }
+
             shouldAddAsterisk = asteriskEndLine - asteriskStartLine !== selectionEndLine - selectionStartLine;
         }
 
@@ -569,6 +605,7 @@ export class Controller {
                 updatedAsteriskedIndexSet.delete(i);
             }
         }
+
         context.dirView.asteriskedIndices.splice(0);
         context.dirView.asteriskedIndices.push(...[...updatedAsteriskedIndexSet].sort((a, b) => a - b));
         this.contentProvider.emitChange(document.uri);
@@ -579,10 +616,12 @@ export class Controller {
         if (!activeEditor) {
             return undefined;
         }
+
         const yamafilerUri = activeEditor.document.uri;
         if (yamafilerUri.scheme !== YAMAFILER_SCHEME) {
             return undefined;
         }
+
         const currentDirUri = yamafilerUri.with({ scheme: 'file' });
         const cachedDirView = this.contentProvider.cachedDirViews.get(normalizePath(currentDirUri.fsPath));
         if (!cachedDirView) {
@@ -598,6 +637,7 @@ export class Controller {
                 });
             return undefined;
         }
+
         const cursorLineNumber = activeEditor.selection.active.line;
         const focusedEntry = 0 < cursorLineNumber && cursorLineNumber <= cachedDirView.entries.length
             ? cachedDirView.entries[cursorLineNumber - 1]
@@ -609,15 +649,18 @@ export class Controller {
             if (asteriskedIndexSet.has(index)) {
                 selectedEntries.push(entry);
             }
+
             if (fileNameFilterMode === 'all' || !asteriskedIndexSet.has(index)) {
                 existingFileNames.add(normalizePath(path.basename(entry.uri.path)));
             }
         }
+
         if (selectedEntries.length === 0) {
             const start = Math.max(activeEditor.selection.start.line - 1, 0);
             const end = activeEditor.selection.end.line;
             selectedEntries.push(...cachedDirView.entries.slice(start, end));
         }
+
         return {
             editor: activeEditor,
             currentDirUri: currentDirUri,
@@ -640,6 +683,7 @@ export class Controller {
             );
             return;
         }
+
         this.tempDirUri ??= vscode.Uri.file(fs.mkdtempSync(path.join(os.tmpdir(), 'yamafiler-')));
         const originalNamesFileUri = vscode.Uri.joinPath(this.tempDirUri, '.Original.yamafiler-batch');
         const editableNamesFileUri = vscode.Uri.joinPath(this.tempDirUri, '.FileNames.yamafiler-batch');
@@ -697,6 +741,7 @@ export class Controller {
             );
             void vscode.window.showInformationMessage(operationMessages[operationType].message);
         }
+
         this.currentBatchOperation = {
             operationType: operationType,
             batchDocument: batchEditDocument,
@@ -747,6 +792,7 @@ export class Controller {
             if (newBaseName.endsWith('/')) {
                 newBaseName = newBaseName.slice(0, -1);
             }
+
             const message = fileNameValidator(newBaseName);
             if (message) {
                 void vscode.window.showErrorMessage(
@@ -754,6 +800,7 @@ export class Controller {
                 );
                 return;
             }
+
             uniqueFileNameSet.add(normalizePath(newBaseName));
             const newUri = vscode.Uri.joinPath(this.currentBatchOperation.navigationContext.currentDirUri, newBaseName);
             if (operationType === 'create') {
@@ -762,12 +809,14 @@ export class Controller {
                 sourceDestUriPairs.push([batchOperation.navigationContext.selectedEntries[i].uri, newUri]);
             }
         }
+
         if (uniqueFileNameSet.size < documentLineCount) {
             void vscode.window.showErrorMessage(
                 vscode.l10n.t('Duplicate filenames detected. All filenames must be unique within this folder.')
             );
             return;
         }
+
         const operationPromises: Promise<edition.Result>[] = [];
         if (operationType === 'create') {
             for (const [newUri, isDir] of fileCreationEntries) {
@@ -788,6 +837,7 @@ export class Controller {
                 }
             }
         }
+
         const operationResults = await Promise.all(operationPromises);
         edition.showAndLogErrors(operationResults);
 
@@ -799,14 +849,17 @@ export class Controller {
         if (!this.currentBatchOperation?.hasCompleted) {
             return;
         }
+
         if (document === this.currentBatchOperation.batchDocument) {
             const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
             const tabPath = getUriFromTab(activeTab)?.fsPath;
             if (
                 activeTab
                 && tabPath
-                && path.relative(normalizePath(tabPath),
-                    normalizePath(this.currentBatchOperation.batchDocument.uri.fsPath)) === ''
+                && path.relative(
+                    normalizePath(tabPath),
+                    normalizePath(this.currentBatchOperation.batchDocument.uri.fsPath)
+                ) === ''
             ) {
                 void vscode.window.tabGroups.close(activeTab);
             }

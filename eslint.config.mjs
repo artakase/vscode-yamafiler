@@ -31,6 +31,7 @@ export default tseslint.config({
         },
     },
     rules: {
+        '@stylistic/array-bracket-newline': ['error', { multiline: true }],
         '@stylistic/comma-dangle': [
             'error',
             {
@@ -41,7 +42,10 @@ export default tseslint.config({
                 functions: 'never',
             },
         ],
+        '@stylistic/function-call-argument-newline': ['error', 'consistent'],
+        '@stylistic/function-paren-newline': ['error', 'multiline-arguments'],
         '@stylistic/implicit-arrow-linebreak': ['error', 'beside'],
+        '@stylistic/lines-around-comment': ['error', { beforeLineComment: true, allowBlockStart: true }],
         '@stylistic/max-len': ['error', { code: 120, ignoreStrings: true, ignoreTemplateLiterals: true }],
         '@stylistic/spaced-comment': ['error', 'always', { exceptions: ['-'] }],
         '@stylistic/no-mixed-operators': [
@@ -78,6 +82,7 @@ export default tseslint.config({
             'error',
             { blankLine: 'always', prev: '*', next: ['class', 'function', 'export'] },
             { blankLine: 'never', prev: 'singleline-export', next: 'singleline-export' },
+            { blankLine: 'always', prev: 'multiline-block-like', next: '*' },
         ],
         'import/order': [
             'error',

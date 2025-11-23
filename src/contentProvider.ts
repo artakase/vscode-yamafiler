@@ -12,6 +12,7 @@ export function compareFileSystemEntries(entryA: FileEntry, entryB: FileEntry): 
     if (dirOrder !== 0) {
         return dirOrder;
     }
+
     return entryA.uri.path.localeCompare(entryB.uri.path);
 }
 
@@ -22,11 +23,13 @@ function formatEntryForDisplay(entry: FileEntry, isAsterisked: boolean): string 
     if (!entry.stats) {
         return `${asteriskOrSpace}?                      ${entryName}${dirMarker}`;
     }
+
     const formattedModTime = new Date(entry.stats.mtime).toISOString().substring(5, 16).replace('T', ' ');
     let symlinkMarker = ' ';
     if (entry.isSymlink) {
         symlinkMarker = entry.stats.type & (vscode.FileType.Directory | vscode.FileType.File) ? 'L' : 'l';
     }
+
     const formattedSize = entry.isDir
         ? ''
         : filesize(entry.stats.size, { base: 2, standard: 'jedec', round: 1, symbols: { B: ' B' } });
@@ -55,13 +58,16 @@ function tildify(absolutePath: string): string {
         if (absolutePath === homedir) {
             return '~';
         }
+
         if (IS_WINDOWS) {
             const homePrefix = homedir + path.sep;
             if (absolutePath.startsWith(homePrefix)) {
                 return `~/${normalizeDriveLetter(absolutePath.substring(homePrefix.length))}`;
             }
+
             return normalizeDriveLetter(absolutePath);
         }
+
         if (path.parse(homedir).root.toLowerCase() !== path.parse(absolutePath).root.toLowerCase()) {
             return normalizeDriveLetter(absolutePath);
         }
@@ -101,6 +107,7 @@ export class YamafilerContentProvider implements vscode.TextDocumentContentProvi
             );
             return '';
         }
+
         const tildifiedPath = tildify(uri.fsPath);
         const dirHeaderLine = `${tildifiedPath}${tildifiedPath.endsWith('/') ? '' : '/'}:`;
         const asteriskedIndexSet = new Set(dirView.asteriskedIndices);
@@ -114,6 +121,7 @@ export class YamafilerContentProvider implements vscode.TextDocumentContentProvi
         if (cachedDirView?.needsRefresh === false) {
             return cachedDirView;
         }
+
         const dirEntries = await vscode.workspace.fs.readDirectory(uri);
         const statPromises = dirEntries.map(async ([fileName, fileType]) => {
             const entryUri = vscode.Uri.joinPath(uri, fileName);
@@ -124,6 +132,7 @@ export class YamafilerContentProvider implements vscode.TextDocumentContentProvi
                 console.warn(`Could not get stats for ${entryUri.toString()}: ${getErrorMessage(error)}`);
                 fileStats = undefined;
             }
+
             return {
                 uri: entryUri,
                 stats: fileStats,
@@ -144,6 +153,7 @@ export class YamafilerContentProvider implements vscode.TextDocumentContentProvi
                 }
             }
         }
+
         const refreshedDirView = { uri, entries, asteriskedIndices, needsRefresh: false };
         this.cachedDirViews.set(normalizePath(uri.fsPath), refreshedDirView);
         return refreshedDirView;
@@ -157,6 +167,7 @@ export class YamafilerContentProvider implements vscode.TextDocumentContentProvi
                 cachedDirView.asteriskedIndices.splice(0);
             }
         }
+
         this.onDidChangeEmitter.fire(uri.with({ scheme: YAMAFILER_SCHEME }));
     }
 }

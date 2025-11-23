@@ -52,6 +52,7 @@ export function normalizeError(error: unknown): Error {
         ) {
             return vscode.FileSystemError.FileExists(error.message);
         }
+
         return error;
     } else if (error === null) {
         return new Error('Error object is null');
