@@ -371,8 +371,10 @@ export class Controller {
         }
 
         let inputPromptText: string;
+        let originalName: string | undefined;
         if (operationType === 'rename') {
             inputPromptText = vscode.l10n.t('New name');
+            originalName = oldBaseName;
         } else if (operationType === 'copy') {
             inputPromptText = vscode.l10n.t('Copy name');
         } else {
@@ -383,7 +385,7 @@ export class Controller {
             value: oldBaseName,
             valueSelection: [0, end],
             prompt: inputPromptText,
-            validateInput: makeValidator(context.existingFileNames),
+            validateInput: makeValidator(context.existingFileNames, originalName),
         });
         if (newBaseName) {
             const uri = vscode.Uri.joinPath(context.currentDirUri, newBaseName);
@@ -780,20 +782,23 @@ export class Controller {
         const fileCreationEntries: [vscode.Uri, boolean][] = [];
         const sourceDestUriPairs: [vscode.Uri, vscode.Uri][] = [];
         for (let i = 0; i < documentLineCount; i++) {
+            const entry = batchOperation.navigationContext.selectedEntries[i];
             let newBaseName = batchOperation.batchDocument.lineAt(i).text;
             const isDir = operationType === 'create'
                 ? newBaseName.endsWith('/')
-                : batchOperation.navigationContext.selectedEntries[i].isDir;
+                : entry.isDir;
             if (newBaseName.endsWith('/')) {
                 newBaseName = newBaseName.slice(0, -1);
             }
 
-            const message = fileNameValidator(newBaseName);
-            if (message) {
-                void vscode.window.showErrorMessage(
-                    vscode.l10n.t('Invalid filename at line {0}: "{1}" ({2})', i + 1, newBaseName, message)
-                );
-                return;
+            if (!(operationType === 'rename' && normalizePath(newBaseName) === normalizePath(path.basename(entry.uri.path)))) {
+                const message = fileNameValidator(newBaseName);
+                if (message) {
+                    void vscode.window.showErrorMessage(
+                        vscode.l10n.t('Invalid filename at line {0}: "{1}" ({2})', i + 1, newBaseName, message)
+                    );
+                    return;
+                }
             }
 
             uniqueFileNameSet.add(normalizePath(newBaseName));
@@ -801,7 +806,7 @@ export class Controller {
             if (operationType === 'create') {
                 fileCreationEntries.push([newUri, isDir]);
             } else {
-                sourceDestUriPairs.push([batchOperation.navigationContext.selectedEntries[i].uri, newUri]);
+                sourceDestUriPairs.push([entry.uri, newUri]);
             }
         }
 

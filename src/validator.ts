@@ -16,7 +16,8 @@ const UNIX_INVALID_FILE_CHARS = /[\\/]/;
 const WINDOWS_FORBIDDEN_NAMES = /^(con|prn|aux|clock\$|nul|lpt[0-9]|com[0-9])(\.(.*?))?$/i;
 
 export function makeValidator(
-    existingFileNames: Set<string> = new Set<string>()
+    existingFileNames: Set<string> = new Set<string>(),
+    originalName?: string
 ): (name: string) => string | undefined {
     return (name: string): string | undefined => {
         if (!name || name !== name.trim()) {
@@ -55,7 +56,12 @@ export function makeValidator(
             }
         }
 
-        if (existingFileNames.has(normalizePath(name))) {
+        let nameAlreadyExists = existingFileNames.has(normalizePath(name));
+        if (originalName) {
+            nameAlreadyExists &&= normalizePath(name) !== normalizePath(originalName);
+        }
+
+        if (nameAlreadyExists) {
             return vscode.l10n.t(
                 'A file or folder named "{0}" already exists in this location. Please choose a different name.',
                 name
