@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.4.0] - 2025-12-10
+
+- Optimize batch operation file writing
+- Remove IS_WINDOWS check for copy operation
+- Allow renaming to equivalent filenames after normalization
+
 ## [0.3.0] - 2025-03-30
 
 - Standardize header format across Unix and Windows
